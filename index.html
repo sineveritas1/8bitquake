@@ -49,6 +49,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .stats div { border: 2px solid var(--grey); padding: 5px; min-width: 0; }
 .stats i { display: block; font-style: normal; font-size: 8px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
 .stats span { font-size: 10px; line-height: 1.5; display: block; overflow-wrap: break-word; }
+#sDistBox { cursor: pointer; }
+#sDistBox .ask { color: var(--gold); }
+.locin { display: flex; gap: 8px; margin-bottom: 12px; }
+.locin input { flex: 1; min-width: 0; font: 16px/1.2 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); padding: 10px 8px; min-height: 48px; -webkit-user-select: text; user-select: text; touch-action: manipulation; border-radius: 0; }
+.locin input::placeholder { color: var(--grey); }
 .feel { border: 2px solid var(--grey); padding: 6px; margin-bottom: 10px; }
 .feel i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
 .feel span { font-size: 11px; line-height: 1.6; display: block; }
@@ -150,7 +155,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <div class="stats">
     <div><i>WHEN</i><span id="sWhen"></span></div>
     <div><i>DEPTH</i><span id="sDepth"></span></div>
-    <div><i>FROM YOU</i><span id="sDist"></span></div>
+    <div id="sDistBox" role="button" tabindex="0" aria-label="Set your location"><i>FROM YOU</i><span id="sDist"></span></div>
   </div>
   <div class="feel"><i id="fLabel">WHAT IT FEELS LIKE</i><span id="fText"></span></div>
   <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
@@ -162,11 +167,26 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="list" id="quakes"></div>
   </div>
 </div>
+<div id="locSheet" class="sheet" hidden>
+  <div class="panel" role="dialog" aria-labelledby="locTitle">
+    <div class="phead"><h2 id="locTitle">YOUR LOCATION</h2><button class="x icon" aria-label="Close"></button></div>
+    <p>SET A STARTING POINT TO SEE HOW MANY MILES EACH QUAKE IS FROM YOU. IT IS SAVED ON THIS DEVICE ONLY.</p>
+    <div class="list"><button id="bGeo">USE MY LOCATION</button></div>
+    <p>YOUR PHONE ASKS PERMISSION THE FIRST TIME. YOUR POSITION NEVER LEAVES THIS DEVICE.</p>
+    <p>OR TYPE A CITY AND STATE, OR A ZIP CODE:</p>
+    <form class="locin" id="locForm"><input id="locText" type="text" inputmode="search" autocomplete="postal-code" placeholder="ST GEORGE UT" aria-label="City and state or ZIP code" /><button id="bFind" type="submit">FIND</button></form>
+    <p id="locNote"></p>
+    <div class="list"><button id="bLocClear" hidden>CLEAR MY LOCATION</button></div>
+  </div>
+</div>
 <div id="keySheet" class="sheet" hidden>
   <div class="panel" role="dialog" aria-labelledby="keyTitle">
     <div class="phead"><h2 id="keyTitle">SETTINGS</h2><button class="x icon" aria-label="Close"></button></div>
     <h3>OPTIONS</h3>
     <div class="list" id="layerList"></div>
+    <h3>YOUR LOCATION</h3>
+    <p id="locNow"></p>
+    <div class="list"><button id="bLocOpen">SET YOUR LOCATION</button><button id="bLocClear2" hidden>CLEAR MY LOCATION</button></div>
     <h3>KEY</h3>
     <p>EACH TRIANGLE IS A QUAKE. COLOR AND SIZE SHOW MAGNITUDE.</p>
     <div class="key" id="keyMags"></div>
@@ -175,7 +195,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS. THERE IS NO SOUND OR VIBRATION.</p>
     <h3>ABOUT AND CREDITS</h3>
     <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
-    <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS.</p>
+    <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS. TYPED PLACES ARE LOOKED UP WITH <a href="https://nominatim.org/" target="_blank" rel="noopener">NOMINATIM</a>.</p>
     <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</span></p>
     <p class="deskonly">KEYS: L LIST, K SETTINGS, R REPLAY, + AND - ZOOM, ARROWS OR DRAG TO MOVE, ESC CLOSE.</p>
     <div class="list"><button id="bIntro">SHOW THE INTRO AGAIN</button></div>
@@ -196,8 +216,10 @@ var C = {}; Object.keys(NES).forEach(function (k) { C[k] = px(NES[k]); });
 function magColor(m) { return m >= 6 ? "red" : m >= 5 ? "orange" : m >= 4 ? "gold" : m >= 2.5 ? "white" : "ice"; }
 
 /* ================= setup ================= */
-var cfg = { name: "HURRICANE UT", lat: 37.1753, lon: -113.2899 };
-try { var saved = JSON.parse(localStorage.getItem("standby.cfg") || "null"); if (saved) { cfg.lat = +saved.lat || cfg.lat; cfg.lon = +saved.lon || cfg.lon; } } catch (e) {}
+// the viewer's own starting point for "miles from you": unset until they choose, kept on this device only,
+// rounded to 0.01 degree (about half a mile) so a precise position is never stored
+var home = null;
+try { var savedHome = JSON.parse(localStorage.getItem("8bitquake.home") || "null"); if (savedHome && isFinite(savedHome.lat) && isFinite(savedHome.lon)) home = savedHome; } catch (e) {}
 // map layers the viewer can switch off from the KEY sheet; remembered on this device only
 var layers = { labels: true, borders: true, roads: true, towns: true };
 try { var savedL = JSON.parse(localStorage.getItem("quakepond.layers") || "null"); if (savedL) Object.keys(layers).forEach(function (k) { if (typeof savedL[k] === "boolean") layers[k] = savedL[k]; }); } catch (e) {}
@@ -754,9 +776,9 @@ function draw(now) {
     return true;
   });
 
-  // your spot
-  var hs = toScr(cfg.lat, cfg.lon), hx = Math.round(hs[0]), hy = Math.round(hs[1]);
-  plot(hx, hy - 2, C.pink); plot(hx, hy + 2, C.pink); plot(hx - 2, hy, C.pink); plot(hx + 2, hy, C.pink);
+  // your spot, once you have set one
+  if (home) { var hs = toScr(home.lat, home.lon), hx = Math.round(hs[0]), hy = Math.round(hs[1]);
+    plot(hx, hy - 2, C.pink); plot(hx, hy + 2, C.pink); plot(hx - 2, hy, C.pink); plot(hx + 2, hy, C.pink); }
 
   // selected quake: blinking brackets
   var q0 = sel ? quakes.get(sel) : null;
@@ -823,7 +845,8 @@ function select(id) {
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
   $("sDepth").textContent = depthStr(q.depth);
-  $("sDist").textContent = Math.round(milesBetween(cfg.lat, cfg.lon, q.lat, q.lon)).toLocaleString("en-US") + " MI";
+  $("sDist").textContent = home ? Math.round(milesBetween(home.lat, home.lon, q.lat, q.lon)).toLocaleString("en-US") + " MI" : "TAP TO SET";
+  $("sDist").className = home ? "" : "ask"; $("sDistBox").setAttribute("aria-label", home ? "Change your location" : "Set your location");
   var f = feelFor(q); $("fLabel").textContent = f[0];
   $("fText").textContent = f[1] + (q.tsunami ? " USGS FLAGGED THIS ONE FOR TSUNAMI REVIEW. THAT IS NOT A WARNING; CHECK TSUNAMI.GOV." : "");
   $("cLink").href = q.url; $("cLink").hidden = !!q.demo;
@@ -914,7 +937,43 @@ function sync() {
   $("bMode").setAttribute("aria-label", mode === "replay" ? "Replaying the last 24 hours. Back to live" : "Replay the last 24 hours");
 }
 // sheets close with their X, with Escape, or with a tap anywhere outside the panel
-function closeSheets() { $("listSheet").hidden = true; $("keySheet").hidden = true; }
+function closeSheets() { $("listSheet").hidden = true; $("keySheet").hidden = true; $("locSheet").hidden = true; }
+
+/* your location: the phone's GPS (asked once by the browser) or a typed city, state or ZIP looked up with Nominatim */
+function saveHome(lat, lon, label) {
+  home = { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100, label: label };
+  try { localStorage.setItem("8bitquake.home", JSON.stringify(home)); } catch (e) {}
+  syncHome(); $("locSheet").hidden = true; if (sel) select(sel);
+}
+function syncHome() {
+  $("locNow").textContent = home ? "MILES ARE MEASURED FROM " + home.label + "." : "NOT SET. MILES FROM YOU WILL SHOW ONCE YOU SET A STARTING POINT.";
+  $("bLocOpen").textContent = home ? "CHANGE YOUR LOCATION" : "SET YOUR LOCATION"; $("bLocClear").hidden = !home; $("bLocClear2").hidden = !home;
+}
+function openLoc() { closeSheets(); $("locNote").textContent = home ? "NOW: " + home.label + "." : ""; $("locSheet").hidden = false; }
+$("sDistBox").addEventListener("click", openLoc);
+$("sDistBox").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLoc(); } });
+$("bLocOpen").addEventListener("click", openLoc);
+function clearHome() { home = null; try { localStorage.removeItem("8bitquake.home"); } catch (e) {} syncHome(); $("locNote").textContent = "CLEARED."; if (sel) select(sel); }
+$("bLocClear").addEventListener("click", clearHome);
+$("bLocClear2").addEventListener("click", clearHome);
+$("bGeo").addEventListener("click", function () {
+  if (!navigator.geolocation) { $("locNote").textContent = "THIS BROWSER CANNOT SHARE A LOCATION. TYPE A CITY OR ZIP INSTEAD."; return; }
+  $("locNote").textContent = "ASKING YOUR PHONE...";
+  navigator.geolocation.getCurrentPosition(function (p) { saveHome(p.coords.latitude, p.coords.longitude, "YOUR LOCATION"); }, function (err) {
+    $("locNote").textContent = err.code === 1 ? "LOCATION IS BLOCKED. ALLOW IT FOR THIS SITE IN YOUR BROWSER SETTINGS, OR TYPE A CITY OR ZIP." : "COULD NOT GET A LOCATION. TRY AGAIN, OR TYPE A CITY OR ZIP.";
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+});
+$("locForm").addEventListener("submit", function (e) {
+  e.preventDefault(); var t = $("locText").value.trim(); if (!t) return;
+  var zip = /^\d{5}$/.test(t), url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&accept-language=en&" + (zip ? "countrycodes=us&postalcode=" : "q=") + encodeURIComponent(t);
+  $("locNote").textContent = "LOOKING UP " + t.toUpperCase() + "...";
+  fetchData(url).then(function (r) {
+    if (!r || !r[0]) { $("locNote").textContent = "NO PLACE FOUND FOR " + t.toUpperCase() + ". TRY CITY AND STATE, LIKE ST GEORGE UT."; return; }
+    var a = r[0].address || {}, st = (a["ISO3166-2-lvl4"] || "").split("-")[1], town = a.city || a.town || a.village || a.hamlet || a.county || r[0].name || t;
+    saveHome(+r[0].lat, +r[0].lon, (zip ? t + " " : "") + (town + (st && a.country_code === "us" ? " " + st : a.country ? ", " + a.country : "")).toUpperCase());
+  }).catch(function () { $("locNote").textContent = "THE LOOKUP DID NOT ANSWER. CHECK YOUR SIGNAL AND TRY AGAIN."; });
+});
+syncHome();
 document.querySelectorAll(".sheet").forEach(function (sh) { sh.addEventListener("click", function (e) { if (e.target === sh) closeSheets(); }); });
 $("bMode").addEventListener("click", function () { mode = mode === "live" ? "replay" : "live"; replay0 = performance.now(); tick.w = 0; sync(); });
 $("bList").addEventListener("click", openList);
@@ -943,7 +1002,7 @@ keyRow($("keyMore"), keyIcon(function (pl) {
   [[3, 0], [3, 1], [2, 2], [1, 3], [0, 3]].forEach(function (p) { [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(function (s) { pl(4 + p[0] * s[0], 4 + p[1] * s[1], "ice"); pl(4 + p[1] * s[0], 4 + p[0] * s[1], "ice"); }); });
   pl(4, 4, "gold");
 }, 9, 9), "RINGS  SHAKING IN THE LAST HOUR. BLINKING  LAST 10 MINUTES");
-keyRow($("keyMore"), keyIcon(function (pl) { pl(2, 0, "pink"); pl(2, 4, "pink"); pl(0, 2, "pink"); pl(4, 2, "pink"); }, 5, 5), "PINK CROSS  YOU");
+keyRow($("keyMore"), keyIcon(function (pl) { pl(2, 0, "pink"); pl(2, 4, "pink"); pl(0, 2, "pink"); pl(4, 2, "pink"); }, 5, 5), "PINK CROSS  YOU, ONCE YOU SET YOUR LOCATION");
 var LAYER_NAMES = { labels: "PLACE NAMES", borders: "BORDERS", roads: "ROADS", towns: "TOWN ICONS" };
 function drawLayers() {
   var box = $("layerList"); box.innerHTML = "";
@@ -1013,6 +1072,7 @@ cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", e
 cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = performance.now(); zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX / SCALE, e.clientY / SCALE); }, { passive: false });
 addEventListener("keydown", function (e) {
   if (!$("splash").hidden) { if (e.key === "Enter" || e.key === " ") $("bStart").click(); return; }
+  if (document.activeElement && document.activeElement.tagName === "INPUT") { if (e.key === "Escape") closeSheets(); return; }
   if (e.key === "Escape") { deselect(); closeSheets(); } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "r") $("bMode").click();
   if (e.key === "+" || e.key === "=") zoomBy(1.5); if (e.key === "-") zoomBy(1 / 1.5);
   var step = 20 / view.z, arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; // 20 map pixels per press
