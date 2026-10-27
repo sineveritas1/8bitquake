@@ -172,7 +172,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="key" id="keyMags"></div>
     <div class="key" id="keyMore"></div>
     <h3>SELECTED QUAKE</h3>
-    <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS, AND ON ANDROID PHONES IT BUZZES EACH TIME IT RIPPLES. BIGGER QUAKES BUZZ LONGER. IPHONES DO NOT LET WEBSITES VIBRATE. THERE IS NO SOUND.</p>
+    <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS. THERE IS NO SOUND OR VIBRATION.</p>
     <h3>ABOUT AND CREDITS</h3>
     <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
     <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS.</p>
@@ -199,7 +199,7 @@ function magColor(m) { return m >= 6 ? "red" : m >= 5 ? "orange" : m >= 4 ? "gol
 var cfg = { name: "HURRICANE UT", lat: 37.1753, lon: -113.2899 };
 try { var saved = JSON.parse(localStorage.getItem("standby.cfg") || "null"); if (saved) { cfg.lat = +saved.lat || cfg.lat; cfg.lon = +saved.lon || cfg.lon; } } catch (e) {}
 // map layers the viewer can switch off from the KEY sheet; remembered on this device only
-var layers = { labels: true, borders: true, roads: true, towns: true, buzz: true };
+var layers = { labels: true, borders: true, roads: true, towns: true };
 try { var savedL = JSON.parse(localStorage.getItem("quakepond.layers") || "null"); if (savedL) Object.keys(layers).forEach(function (k) { if (typeof savedL[k] === "boolean") layers[k] = savedL[k]; }); } catch (e) {}
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 var buf = document.createElement("canvas"), b = buf.getContext("2d");
@@ -474,7 +474,7 @@ var RIPPLE = {
   replayLife: 4.5,    // 24H replay: ring life in replay seconds
   replayRings: 1.3,   //   rings per point of magnitude, at least 2
   selectedEvery: 4,   // a selected quake: seconds between bursts (stretched if its rings need longer)
-  selectedLife: 4     //   seconds each ring lives; the phone buzzes at the start of each burst
+  selectedLife: 4     //   seconds each ring lives
 };
 function reach(m) { return RIPPLE.reachBase * Math.pow(RIPPLE.reachGrowth, m); }
 function splash(q, isNew) {
@@ -483,16 +483,9 @@ function splash(q, isNew) {
 }
 var shakeUntil = 0, shakeOff = 0;
 
-/* ================= vibration =================
-   Android browsers can buzz the phone; iPhones ignore it. Used only for the selected quake, once per ripple burst. */
-function buzz(m) {
-  if (!layers.buzz || !navigator.vibrate || document.hidden) return;
-  try { navigator.vibrate(m >= 6 ? [120, 60, 120, 60, 120] : m >= 5 ? [80, 50, 80] : m >= 4 ? [50, 40, 50] : m >= 2.5 ? 30 : 15); } catch (e) {}
-}
-
 /* ================= view =================
    Plain lat/lon grid when zoomed out; when zoomed in, east-west is squeezed by the cosine of the latitude so towns are not stretched. */
-var view = { lon: -100, lat: 15, z: 0 }, mode = "live", sel = null, selAt = 0, selBurst = -1, TAPS = [], replay0 = 0, REPLAY_S = 72;
+var view = { lon: -100, lat: 15, z: 0 }, mode = "live", sel = null, selAt = 0, TAPS = [], replay0 = 0, REPLAY_S = 72;
 var P = { zx: 0, zy: 0, l: 0, r: 0, t: 0, b: 0 };
 function kxFor(z, lat) { var t = clamp((Math.log(z) - Math.log(8)) / (Math.log(40) - Math.log(8)), 0, 1); return 1 - t * (1 - Math.cos(clamp(lat, -75, 75) * DEG)); }
 function proj() {
@@ -712,9 +705,8 @@ function draw(now) {
   list.forEach(function (q) {
     var s3 = toScr(q.lat, q.lon); if (s3[0] < -40 || s3[0] > BW + 40 || s3[1] < -40 || s3[1] > BH + 40) return;
     var age = (simNow - q.time) / 1000, sx = Math.round(s3[0]), sy = Math.round(s3[1]);
-    if (q.id === sel) { // selected: repeating bursts, a buzz at the start of each
+    if (q.id === sel) { // selected: repeating bursts
       var sr = Math.max(2, Math.round(q.mag)), cyc = Math.max(RIPPLE.selectedEvery, sr * RIPPLE.gap + RIPPLE.selectedLife), sa = (now - selAt) / 1000;
-      if (Math.floor(sa / cyc) !== selBurst) { selBurst = Math.floor(sa / cyc); buzz(q.mag); }
       drawRipples(sx, sy, q, sa % cyc, sr, 1, RIPPLE.selectedLife);
     } else if (mode === "live" && age < 3600) {
       drawRipples(sx, sy, q, age % RIPPLE.liveEvery, Math.max(1, Math.round(q.mag)), 0.45 + 0.55 * (1 - age / 3600), RIPPLE.liveLife);
@@ -802,7 +794,7 @@ function clockStr(t) { return new Date(t).toLocaleTimeString("en-US", { hour: "n
 var $ = function (id) { return document.getElementById(id); };
 function select(id) {
   var q = quakes.get(id); if (!q) return;
-  if (sel !== id) { sel = id; selAt = performance.now(); selBurst = -1; }
+  if (sel !== id) { sel = id; selAt = performance.now(); }
   $("cMag").textContent = "M" + q.mag.toFixed(1); $("cMag").style.background = NES[magColor(q.mag)];
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
@@ -929,7 +921,6 @@ keyRow($("keyMore"), keyIcon(function (pl) {
 }, 9, 9), "RINGS  SHAKING IN THE LAST HOUR. BLINKING  LAST 10 MINUTES");
 keyRow($("keyMore"), keyIcon(function (pl) { pl(2, 0, "pink"); pl(2, 4, "pink"); pl(0, 2, "pink"); pl(4, 2, "pink"); }, 5, 5), "PINK CROSS  YOU");
 var LAYER_NAMES = { labels: "PLACE NAMES", borders: "BORDERS", roads: "ROADS", towns: "TOWN ICONS" };
-if (navigator.vibrate) LAYER_NAMES.buzz = "VIBRATE ON SELECT"; // only offered where the browser can vibrate
 function drawLayers() {
   var box = $("layerList"); box.innerHTML = "";
   Object.keys(LAYER_NAMES).forEach(function (k) {

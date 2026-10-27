@@ -26,12 +26,12 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - Drag to pan, pinch or scroll to zoom, `+` and `-` buttons.
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
 - Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
-- Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from the home spot, Hurricane UT by default), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds, and on Android phones it buzzes with each burst (iPhones do not let websites vibrate). There is no sound.
+- Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from the home spot, Hurricane UT by default), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds. There is no sound or vibration.
 - The ticker at the bottom scrolls the 6 newest quakes, with the red 8-BIT QUAKE header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
-- **Gear:** switches for place names, borders, roads, town icons and vibration (remembered on this device), the key, how selection and vibration work, and credits.
+- **Gear:** switches for place names, borders, roads, town icons (remembered on this device), the key, how selection works, and credits.
 - Menus close with their X, a tap outside, or `Esc`.
 - Layout is tailored per device: phones get a bottom card; tablets and desktops get a side panel and a finer map; desktops add a pointer cursor and arrow-key panning.
 - Keys: `l` list, `k` settings, `r` replay, `+` and `-` zoom, arrows pan, `Esc` close.
