@@ -6,14 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#000000" />
-<title>Quake Pond</title>
+<title>8-BIT Quake</title>
 <meta name="description" content="Every earthquake on Earth, live from USGS, dropped like stones in an 8-bit pond, on a pixel map of nations, states, rivers, roads and towns." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <style>
-/* QUAKE POND: live USGS earthquakes as ripples on an 8-bit world. Everything is drawn into a tiny buffer
+/* 8-BIT QUAKE: live USGS earthquakes as ripples on an 8-bit world. Everything is drawn into a tiny buffer
    (150 pixels on the short side) using only colors from the NES palette, then scaled up with hard edges. */
 :root {
   --black: #000000; --navy: #24188c; --blue: #0058f8; --sky: #3cbcfc; --ice: #a4e4fc;
@@ -24,64 +24,119 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--black); }
-body { font-family: var(--px); color: var(--white); user-select: none; -webkit-user-select: none; touch-action: none; }
+body { font-family: var(--px); color: var(--white); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
 #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 #top { position: fixed; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; z-index: 5; pointer-events: none; }
 #top button { pointer-events: auto; }
-button { font: 10px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
+button { font: 12px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
 button:active, button.on { background: var(--white); color: var(--black); }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-#zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
+#zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
 #zoom button { font-size: 16px; width: 48px; }
-#credit { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); top: 50%; z-index: 4; font-size: 6px; line-height: 1.6; color: rgba(252, 252, 252, 0.55); pointer-events: none; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); }
+#dock { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px)); z-index: 5; display: flex; gap: 8px; }
+#dock button { width: 48px; display: grid; place-items: center; }
+.icon svg { width: 24px; height: auto; display: block; }
+/* OpenStreetMap asks for visible credit wherever its data is on screen */
+#osm { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px) + 60px); z-index: 4; font-size: 8px; color: rgba(252, 252, 252, 0.7); pointer-events: none; text-shadow: 1px 1px 0 #000; }
 
-#card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px)); width: min(460px, calc(100% - 16px)); z-index: 6;
+#card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tick, 26px) + 8px); width: min(460px, calc(100% - 16px)); z-index: 6; max-height: calc(100% - var(--tick, 26px) - 8px - 64px - env(safe-area-inset-top, 0px)); overflow: auto; touch-action: pan-y; overscroll-behavior: contain;
   background: var(--black); border: 4px solid var(--white); padding: 12px; box-shadow: 4px 4px 0 var(--navy); }
 .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-#cMag { font-size: 20px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
-#cPlace { font-size: 10px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px; }
-.stats div { border: 2px solid var(--grey); padding: 6px; min-width: 0; }
-.stats i { display: block; font-style: normal; font-size: 7px; color: var(--ice); margin-bottom: 5px; }
-.stats span { font-size: 9px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
-.row2 { display: flex; gap: 8px; }
-.row2 > * { flex: 1; }
-.row2 a { display: grid; place-items: center; font: 10px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
+#cMag { font-size: 24px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
+#cPlace { font-size: 12px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: break-word; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.stats div { border: 2px solid var(--grey); padding: 5px; min-width: 0; }
+.stats i { display: block; font-style: normal; font-size: 8px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
+.stats span { font-size: 10px; line-height: 1.5; display: block; overflow-wrap: break-word; }
+.feel { border: 2px solid var(--grey); padding: 6px; margin-bottom: 10px; }
+.feel i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
+.feel span { font-size: 11px; line-height: 1.6; display: block; }
+#cLink { display: grid; place-items: center; font: 12px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
+[data-dev="tablet"] #card, [data-dev="desktop"] #card { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); transform: none;
+  top: calc(max(8px, env(safe-area-inset-top, 0px)) + 72px); bottom: auto; width: min(440px, 60%); padding: 18px;
+  max-height: calc(100% - max(8px, env(safe-area-inset-top, 0px)) - 80px - var(--tick, 26px)); }
+/* bigger screens get bigger card text */
+[data-dev="tablet"] #cMag, [data-dev="desktop"] #cMag { font-size: 30px; }
+[data-dev="tablet"] #cPlace, [data-dev="desktop"] #cPlace { font-size: 15px; }
+[data-dev="tablet"] .stats i, [data-dev="desktop"] .stats i, [data-dev="tablet"] .feel i, [data-dev="desktop"] .feel i { font-size: 10px; }
+[data-dev="tablet"] .stats span, [data-dev="desktop"] .stats span, [data-dev="tablet"] .feel span, [data-dev="desktop"] .feel span { font-size: 13px; }
+[data-dev="tablet"] .panel p, [data-dev="desktop"] .panel p, [data-dev="tablet"] .panel ul, [data-dev="desktop"] .panel ul, [data-dev="tablet"] .list button, [data-dev="desktop"] .list button, [data-dev="tablet"] .key div, [data-dev="desktop"] .key div { font-size: 12px; }
+[data-dev="tablet"] .panel, [data-dev="desktop"] .panel { width: min(560px, 100%); }
+[data-dev="tablet"] #splash .panel p, [data-dev="desktop"] #splash .panel p { font-size: 15px; }
+[data-dev="tablet"] #splash h1, [data-dev="desktop"] #splash h1 { font-size: 44px; }
+[data-dev="tablet"].carded #zoom, [data-dev="desktop"].carded #zoom { right: calc(min(440px, 60%) + 16px + env(safe-area-inset-right, 0px)); }
+[data-dev="tablet"] button { min-height: 52px; min-width: 52px; }
+[data-dev="tablet"] #zoom button, [data-dev="tablet"] #dock button { width: 56px; }
+[data-dev="desktop"] #cv { cursor: grab; }
+.deskonly { display: none; }
+[data-dev="desktop"] .deskonly { display: block; }
 @media (orientation: landscape) and (max-height: 520px) {
-  #card { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); transform: none; top: 64px; bottom: auto; width: min(320px, 46%); max-height: calc(100% - 100px); overflow: auto; padding: 10px; }
-  #zoom { right: auto; left: max(22px, env(safe-area-inset-left, 0px) + 14px); }
+  #card { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; top: max(8px, env(safe-area-inset-top, 0px)); bottom: auto; width: min(320px, 46%); max-height: calc(100% - 16px - var(--tick, 26px)); overflow: auto; touch-action: pan-y; padding: 10px; }
 }
 
 .sheet { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: grid; place-items: center; padding: 16px; }
-.panel { width: min(480px, 100%); max-height: 100%; overflow: auto; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
-.panel h2 { margin: 0 0 10px; font-size: 13px; font-weight: 400; color: var(--gold); }
-.panel p { margin: 0 0 14px; color: var(--ice); font-size: 8px; line-height: 1.8; }
+.panel { width: min(480px, 100%); max-height: 100%; overflow: auto; touch-action: pan-y; overscroll-behavior: contain; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
+.panel h2 { margin: 0 0 10px; font-size: 16px; font-weight: 400; color: var(--gold); }
+.panel h3 { margin: 18px 0 10px; font-size: 12px; font-weight: 400; color: var(--gold); }
+.panel a { color: var(--sky); }
+.phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: -16px; background: var(--black); margin: -16px -16px 6px; padding: 16px 16px 0; }
+.phead h2 { padding-top: 14px; }
+.phead button { box-shadow: none; flex: none; }
+.panel ul { margin: 0 0 14px; padding-left: 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
+.panel p { margin: 0 0 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
 .list { display: grid; gap: 6px; margin-bottom: 12px; }
-.list button { text-align: left; width: 100%; font-size: 8px; display: flex; gap: 10px; align-items: center; box-shadow: none; border-width: 2px; line-height: 1.5; }
+.list button { text-align: left; width: 100%; font-size: 10px; display: flex; gap: 10px; align-items: center; box-shadow: none; border-width: 2px; line-height: 1.5; }
 .list button b { font-weight: 400; min-width: 4.5em; }
 .list button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list button em { font-style: normal; color: var(--grey); white-space: nowrap; }
 .list button.on em { color: var(--navy); }
 .key { display: grid; gap: 8px; margin-bottom: 14px; }
-.key div { display: flex; align-items: center; gap: 12px; font-size: 8px; line-height: 1.6; white-space: pre-wrap; }
+.key div { display: flex; align-items: center; gap: 12px; font-size: 10px; line-height: 1.6; white-space: pre-wrap; }
 .key canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: none; }
 .key .ic { width: 36px; display: flex; justify-content: center; flex: none; }
-#loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; background: var(--black); color: var(--white); font-size: 12px; line-height: 2; text-align: center; padding: 16px; }
-@media (prefers-reduced-motion: reduce) { #loading { animation: none; } }
+#splash { position: fixed; inset: 0; z-index: 20; background: var(--black); display: grid; padding: 16px; overflow: auto; touch-action: pan-y; }
+/* margin auto centers it but, unlike place-items, still lets a too-tall panel scroll from its top */
+#splash .panel { max-height: none; margin: auto; overflow: visible; overscroll-behavior: auto; }
+#splash .panel { text-align: center; padding: 22px 18px; min-height: min(660px, calc(100dvh - 32px)); display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+#splash .panel p { font-size: 13px; line-height: 1.85; margin-bottom: 18px; }
+#splash h1 { margin: 6px 0 20px; font-size: 34px; font-weight: 400; color: var(--gold); line-height: 1.3; }
+#splash p { text-align: left; }
+/* safety line: red caution triangle centered above white text */
+.panel p.warn { color: var(--white); display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.panel p.warn .wicon svg { width: 32px; height: auto; display: block; color: var(--red); }
+@media (max-height: 700px) {
+  #splash .panel { min-height: 0; padding: 14px 16px; }
+  #splash h1 { margin: 0 0 10px; font-size: 26px; }
+  #splash .panel p { font-size: 12px; line-height: 1.8; margin-bottom: 12px; }
+}
+/* while a card is open on a short screen there is no room for side buttons; pinch still zooms */
+.squeezed #zoom, .squeezed #dock, .squeezed #osm { display: none; }
+#bStart { width: 100%; font-size: 14px; margin-top: 4px; }
+#bStart[disabled] { color: var(--grey); border-color: var(--grey); cursor: default; }
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="loading">QUAKE POND<br />PRESS START</div>
-<div id="top">
-  <button id="bMode" aria-label="Switch between live and a replay of the last 24 hours">LIVE</button>
-  <button id="bSound" aria-label="Turn the blip sound on or off">SND</button>
-  <button id="bList" aria-label="Biggest quakes today">LIST</button>
-  <button id="bWorld" aria-label="Switch between the whole world and the US">USA</button>
-  <button id="bKey" aria-label="Map key and layers">KEY</button>
+<div id="safe" aria-hidden="true" style="position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);"></div>
+<div id="splash" role="dialog" aria-labelledby="splashTitle">
+  <div class="panel">
+    <h1 id="splashTitle">8-BIT QUAKE</h1>
+    <p>EVERY EARTHQUAKE ON EARTH FROM THE LAST 24 HOURS, LIVE FROM THE U.S. GEOLOGICAL SURVEY (USGS), CHECKED EVERY MINUTE.</p>
+    <p>TAP A TRIANGLE FOR DETAILS. THE GEAR HAS THE KEY, MAP LAYERS AND CREDITS.</p>
+    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING. FOR ALERTS, FOLLOW YOUR LOCAL OFFICIALS.</span></p>
+    <button id="bStart" disabled>LOADING MAP...</button>
+  </div>
 </div>
-<div id="credit">QUAKES USGS. MAP NATURAL EARTH. ROADS AND TOWNS &copy; OPENSTREETMAP CONTRIBUTORS.</div>
+<div id="top">
+  <button id="bList" aria-label="Biggest quakes in the last 24 hours">LIST</button>
+  <button id="bWorld" aria-label="Switch between the whole world and the US">USA</button>
+  <button id="bKey" class="icon" aria-label="Settings, key and credits"></button>
+</div>
+<div id="osm" hidden>&copy; OPENSTREETMAP</div>
+<div id="dock">
+  <button id="bMode" class="icon" aria-label="Replay the last 24 hours" aria-pressed="false"></button>
+</div>
 <div id="zoom">
   <button id="bIn" aria-label="Zoom in">+</button>
   <button id="bOut" aria-label="Zoom out">-</button>
@@ -95,31 +150,35 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <div class="stats">
     <div><i>WHEN</i><span id="sWhen"></span></div>
     <div><i>DEPTH</i><span id="sDepth"></span></div>
-    <div><i>FELT BY</i><span id="sFelt"></span></div>
     <div><i>FROM YOU</i><span id="sDist"></span></div>
   </div>
-  <div class="row2">
-    <button id="cDrop" aria-label="Play this quake's ripple and sound again">RIPPLE AGAIN</button>
-    <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
-  </div>
+  <div class="feel"><i id="fLabel">WHAT IT FEELS LIKE</i><span id="fText"></span></div>
+  <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
 </div>
 <div id="listSheet" class="sheet" hidden>
   <div class="panel" role="dialog" aria-labelledby="listTitle">
-    <h2 id="listTitle">BIGGEST TODAY</h2>
+    <div class="phead"><h2 id="listTitle">BIGGEST IN 24 HOURS</h2><button class="x icon" aria-label="Close"></button></div>
     <p id="listNote"></p>
     <div class="list" id="quakes"></div>
-    <div class="list"><button id="bListClose">CLOSE</button></div>
   </div>
 </div>
 <div id="keySheet" class="sheet" hidden>
   <div class="panel" role="dialog" aria-labelledby="keyTitle">
-    <h2 id="keyTitle">KEY</h2>
+    <div class="phead"><h2 id="keyTitle">SETTINGS</h2><button class="x icon" aria-label="Close"></button></div>
+    <h3>OPTIONS</h3>
+    <div class="list" id="layerList"></div>
+    <h3>KEY</h3>
     <p>EACH TRIANGLE IS A QUAKE. COLOR AND SIZE SHOW MAGNITUDE.</p>
     <div class="key" id="keyMags"></div>
     <div class="key" id="keyMore"></div>
-    <h2>MAP LAYERS</h2>
-    <div class="list" id="layerList"></div>
-    <div class="list"><button id="bKeyClose">CLOSE</button></div>
+    <h3>SELECTED QUAKE</h3>
+    <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS. THERE IS NO SOUND OR VIBRATION.</p>
+    <h3>ABOUT AND CREDITS</h3>
+    <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
+    <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS.</p>
+    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</span></p>
+    <p class="deskonly">KEYS: L LIST, K SETTINGS, R REPLAY, + AND - ZOOM, ARROWS OR DRAG TO MOVE, ESC CLOSE.</p>
+    <div class="list"><button id="bIntro">SHOW THE INTRO AGAIN</button></div>
   </div>
 </div>
 <script>
@@ -144,13 +203,28 @@ var layers = { labels: true, borders: true, roads: true, towns: true };
 try { var savedL = JSON.parse(localStorage.getItem("quakepond.layers") || "null"); if (savedL) Object.keys(layers).forEach(function (k) { if (typeof savedL[k] === "boolean") layers[k] = savedL[k]; }); } catch (e) {}
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 var buf = document.createElement("canvas"), b = buf.getContext("2d");
-var BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
+var SAFE_T = 0, SAFE_B = 0, BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
+/* Three tailored layouts, set as data-dev on <html>:
+   phone   short side under 600px: bottom card, map 150 pixels on the short side
+   tablet  short side 600px or more, touch: card as a right side panel, map 180 pixels
+   desktop mouse or trackpad and a big screen: right side panel, map 200 pixels, pointer cursor, key hints */
+var DEV = "phone", DEV_SHORT = { phone: 150, tablet: 180, desktop: 200 };
+function deviceClass(w, h) {
+  if (Math.min(w, h) < 600) return "phone";
+  return window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches ? "desktop" : "tablet";
+}
 function resize() {
-  var w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
-  SCALE = Math.min(w, h) / SHORT; BW = Math.ceil(w / SCALE); BH = Math.ceil(h / SCALE);
+  var w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 2), oldScale = SCALE;
+  DEV = deviceClass(w, h); document.documentElement.setAttribute("data-dev", DEV); SHORT = DEV_SHORT[DEV];
+  SCALE = Math.min(w, h) / SHORT;
+  if (view.z) view.z *= oldScale / SCALE; // keep the same framing when the pixel size changes
+  BW = Math.ceil(w / SCALE); BH = Math.ceil(h / SCALE);
   buf.width = BW; buf.height = BH; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   img = b.createImageData(BW, BH); px32 = new Uint32Array(img.data.buffer);
-  document.documentElement.style.setProperty("--tick", Math.ceil(16 * SCALE) + "px");
+  // iPhone notch and home bar: keep the ticker above the home bar and map messages below the status bar (in buffer pixels)
+  var sp = getComputedStyle(document.getElementById("safe"));
+  SAFE_T = Math.ceil((parseFloat(sp.paddingTop) || 0) / SCALE); SAFE_B = Math.ceil((parseFloat(sp.paddingBottom) || 0) / SCALE);
+  document.documentElement.style.setProperty("--tick", Math.ceil((16 + SAFE_B) * SCALE) + "px");
   if (!view.z) worldView();
 }
 var clamp = function (v, a, c) { return v < a ? a : v > c ? c : v; };
@@ -259,17 +333,42 @@ function lazy(name, fn) { if (want[name]) return; want[name] = true; fn().then(b
 function loadLand10() { lazy("land10", function () { return fetchData(WA + "land-10m.json").then(function (t) { MAP.land10 = polysFrom(topojson.feature(t, t.objects.land)); }); }); }
 function loadPlaces10() { lazy("places10", function () { return fetchAny(neUrls("ne_10m_populated_places_simple")).then(function (j) { MAP.places10 = nePlaces(j); }); }); }
 
-/* OpenStreetMap through Overpass, fetched one grid cell at a time once the view settles.
-   Three tiers: highways and towns, then main roads, rivers and villages, then town streets. */
+/* Big roads from our own files: data/roads/ is Natural Earth's 1:10m roads (public domain), cut into 10 degree tiles
+   by tools/build-roads.js. A tile loads the first time the view needs it. Kinds: 0 major highway, 1 secondary, 2 road. */
+var NE_ROAD_Z = [14, 30, 55], NE_ROAD_STY = ["motorway", "trunk", "primary"], neRoadIndex = null, neRoadTiles = new Map();
+function neRoadsVisible() {
+  var out = []; if (!layers.roads || view.z < NE_ROAD_Z[0]) return out;
+  if (!neRoadIndex) { lazy("roadIndex", function () { return fetchData("data/roads/index.json").then(function (j) { neRoadIndex = { tile: j.tile, q: j.q, has: new Set(j.tiles) }; }); }); return out; }
+  var T = neRoadIndex.tile, j0 = Math.floor((Math.max(P.b, -90) + 90) / T), j1 = Math.floor((Math.min(P.t, 89.99) + 90) / T);
+  for (var i = Math.floor((P.l + 180) / T); i <= Math.floor((P.r + 180) / T); i++) for (var j = j0; j <= j1; j++) {
+    var key = (((i % 36) + 36) % 36) + "_" + j, t = neRoadTiles.get(key);
+    if (t === undefined && neRoadIndex.has.has(key)) { neRoadTiles.set(key, "loading"); loadRoadTile(key); }
+    else if (t && t !== "loading") out.push(t);
+  }
+  return out;
+}
+function loadRoadTile(key) {
+  fetchData("data/roads/" + key + ".json").then(function (j) {
+    var q = neRoadIndex.q, lines = j.lines.map(function (a) {
+      var pts = new Float64Array(a.length - 1), x = a[1], y = a[2]; pts[0] = x / q; pts[1] = y / q;
+      for (var n = 3, m = 2; n < a.length; n += 2, m += 2) { x += a[n]; y += a[n + 1]; pts[m] = x / q; pts[m + 1] = y / q; }
+      return { pts: pts, bb: bbOf([pts]), kind: a[0] };
+    });
+    neRoadTiles.set(key, lines); bump();
+  }).catch(function () { neRoadTiles.delete(key); });
+}
+
+/* Extra detail from OpenStreetMap through Overpass, fetched one grid cell at a time once the view settles.
+   Three tiers: towns, then all main roads, rivers and villages up close, then town streets. */
 var TIERS = [
-  { z: 55, cell: 2, q: 'way["highway"~"^(motorway|trunk)$"]({b});node["place"~"^(city|town)$"]({b});' },
-  { z: 150, cell: 0.5, q: 'way["highway"~"^(primary|secondary)$"]({b});way["waterway"="river"]({b});node["place"="village"]({b});' },
+  { z: 55, cell: 2, q: 'node["place"~"^(city|town)$"]({b});' },
+  { z: 150, cell: 0.5, q: 'way["highway"~"^(motorway|trunk|primary|secondary)$"]({b});way["waterway"="river"]({b});node["place"="village"]({b});' },
   { z: 380, cell: 0.25, q: 'way["highway"~"^(tertiary|unclassified|residential)$"]({b});node["place"~"^(hamlet|suburb|neighbourhood)$"]({b});' }
 ];
 var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
 var HW = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", unclassified: "minor", residential: "minor" };
 var PLACE_POP = { city: 2e5, town: 2e4, village: 1500, hamlet: 150, suburb: 400, neighbourhood: 300 };
-var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0;
+var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0, OSM_TIMEOUT = 45000; // Overpass may queue us, then runs up to its own 25 second limit
 function visCells(ti) {
   var T = TIERS[ti], c = T.cell, out = [];
   var j0 = Math.floor(Math.max(P.b, -84) / c), j1 = Math.floor(Math.min(P.t, 84) / c), i0 = Math.floor(P.l / c), i1 = Math.floor(P.r / c);
@@ -305,23 +404,28 @@ async function osmTick(now) {
   for (var ti = 0; ti < TIERS.length && !next; ti++) {
     if (view.z < TIERS[ti].z) break;
     var cells = visCells(ti);
-    for (var i = 0; i < cells.length; i++) { var e = osmCells.get(cells[i].key); if (!e || (e.state === "err" && now > e.retry)) { next = cells[i]; break; } }
+    for (var i = 0; i < cells.length; i++) { var e = osmCells.get(cells[i].key); if (!e || (e.state === "err" && now > e.retry) || e.state === "retry") { next = cells[i]; break; } }
   }
   if (!next) return;
   var c = TIERS[next.ti].cell, bbox = [next.s, next.w, next.s + c, next.w + c].map(function (v) { return v.toFixed(4); }).join(",");
   var q = "[out:json][timeout:25];(" + TIERS[next.ti].q.replace(/\{b\}/g, bbox) + ");out geom qt;";
+  var prev = osmCells.get(next.key), tries = prev && prev.state === "retry" ? prev.tries : 0;
   osmBusy = true; osmCells.set(next.key, { state: "loading" });
+  // a server that hangs must not stall every other cell, so each request gets a hard time limit
+  var ctl = window.AbortController ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, OSM_TIMEOUT) : 0;
   try {
-    var r = await fetch(OVERPASS[ovp], { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+    var r = await fetch(OVERPASS[ovp], { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: ctl ? ctl.signal : undefined });
     if (!r.ok) throw new Error("HTTP " + r.status);
     var data = parseOSM(await r.json());
     osmCells.set(next.key, { state: "ok", lines: data.lines, places: data.places, t: now });
     if (osmCells.size > 300) { var oldest = null; osmCells.forEach(function (v, k) { if (v.state === "ok" && (!oldest || v.t < osmCells.get(oldest).t)) oldest = k; }); if (oldest) osmCells.delete(oldest); }
     bump();
   } catch (err) {
-    osmCells.set(next.key, { state: "err", retry: performance.now() + 60000 });
-    ovp = (ovp + 1) % OVERPASS.length; osmCool = performance.now() + 4000;
+    // try the same cell on the next server; only after every server has failed, wait a minute before asking again
+    tries++; ovp = (ovp + 1) % OVERPASS.length; osmCool = performance.now() + 1500;
+    osmCells.set(next.key, tries < OVERPASS.length ? { state: "retry", tries: tries } : { state: "err", retry: performance.now() + 60000 });
   }
+  clearTimeout(timer);
   osmBusy = false;
 }
 function osmVisible(ti) { var out = []; if (view.z < TIERS[ti].z) return out; visCells(ti).forEach(function (c) { var e = osmCells.get(c.key); if (e && e.state === "ok") out.push(e); }); return out; }
@@ -337,7 +441,7 @@ function addFeed(j) {
     if (typeof g[0] !== "number" || typeof p.mag !== "number") return;
     var q = quakes.get(f.id);
     var rec = { id: f.id, lon: g[0], lat: g[1], depth: g[2] || 0, mag: p.mag, place: toMiles(p.place || "Unknown place"), time: p.time, url: p.url || "https://earthquake.usgs.gov/",
-      felt: p.felt || 0, tsunami: !!p.tsunami, alert: p.alert || "", type: p.type || "earthquake" };
+      felt: p.felt || 0, mmi: p.mmi || 0, cdi: p.cdi || 0, tsunami: !!p.tsunami, alert: p.alert || "", type: p.type || "earthquake" };
     if (!q) { quakes.set(f.id, rec); if (!firstLoad && now - rec.time < 3 * 3600e3) fresh.push(rec); }
     else Object.assign(q, rec);
   });
@@ -388,33 +492,25 @@ var RIPPLE = {
   gap: 0.5,           // seconds between one ring and the next
   reachBase: 0.5,     // final ring radius in degrees is reachBase * reachGrowth ^ magnitude
   reachGrowth: 1.55,  // so M2 1.2, M4 2.9, M6 6.9, M8 16.6 degrees
-  splashLife: 7,      // a fresh drop (new quake, tap, list, RIPPLE AGAIN): seconds each ring lives
+  splashLife: 7,      // a fresh drop (a new quake arriving): seconds each ring lives
   splashRings: 1.5,   //   rings per point of magnitude, at least 2
   liveLife: 5,        // live mode, quakes under an hour old: seconds each ring lives
   liveEvery: 9,       //   seconds between repeats; keep above gap * rings + liveLife
   replayLife: 4.5,    // 24H replay: ring life in replay seconds
-  replayRings: 1.3    //   rings per point of magnitude, at least 2
+  replayRings: 1.3,   //   rings per point of magnitude, at least 2
+  selectedEvery: 4,   // a selected quake: seconds between bursts (stretched if its rings need longer)
+  selectedLife: 4     //   seconds each ring lives
 };
 function reach(m) { return RIPPLE.reachBase * Math.pow(RIPPLE.reachGrowth, m); }
 function splash(q, isNew) {
   splashes.push({ q: q, t0: performance.now(), rings: Math.max(2, Math.round(q.mag * RIPPLE.splashRings)), big: true });
-  if (isNew) { latest = q; blip(q.mag); if (q.mag >= 5) shakeUntil = performance.now() + 900 + q.mag * 150; }
+  if (isNew) { latest = q; if (q.mag >= 5) shakeUntil = performance.now() + 900 + q.mag * 150; }
 }
 var shakeUntil = 0, shakeOff = 0;
 
-/* ================= sound ================= */
-var audio = null, sound = false;
-function blip(m) {
-  if (!sound || !audio) return;
-  var t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
-  o.type = "square"; o.frequency.setValueAtTime(Math.max(90, 1100 - m * 130), t); o.frequency.exponentialRampToValueAtTime(Math.max(50, 500 - m * 60), t + 0.12 + m * 0.05);
-  g.gain.setValueAtTime(0.07, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15 + m * 0.07);
-  o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + 0.2 + m * 0.08);
-}
-
 /* ================= view =================
    Plain lat/lon grid when zoomed out; when zoomed in, east-west is squeezed by the cosine of the latitude so towns are not stretched. */
-var view = { lon: -100, lat: 15, z: 0 }, mode = "live", sel = null, TAPS = [], replay0 = 0, REPLAY_S = 72;
+var view = { lon: -100, lat: 15, z: 0 }, mode = "live", sel = null, selAt = 0, TAPS = [], replay0 = 0, REPLAY_S = 72;
 var P = { zx: 0, zy: 0, l: 0, r: 0, t: 0, b: 0 };
 function kxFor(z, lat) { var t = clamp((Math.log(z) - Math.log(8)) / (Math.log(40) - Math.log(8)), 0, 1); return 1 - t * (1 - Math.cos(clamp(lat, -75, 75) * DEG)); }
 function proj() {
@@ -467,7 +563,7 @@ function drawRipples(cx, cy, q, age, rings, strength, life) {
 
 /* ================= the static map, baked into a pixel layer whenever the view or the data changes ================= */
 var rc = document.createElement("canvas"), rx = rc.getContext("2d", { willReadFrequently: true });
-var base = null, mask = null, glint = [], bakeKey = "", bakeVer = -1;
+var base = null, mask = null, bakeKey = "", bakeVer = -1;
 function shiftsFor(bb) { var out = []; for (var s = -360; s <= 360; s += 360) if (bb[0] + s <= P.r && bb[2] + s >= P.l && bb[1] <= P.t && bb[3] >= P.b) out.push(s); return out; }
 function fillPolys(list, color) {
   rx.fillStyle = color;
@@ -539,7 +635,7 @@ function bake(now) {
   fillPolys(land, "#fff"); if (MAP.lakes) fillPolys(MAP.lakes, "#000");
   var d = rx.getImageData(0, 0, BW, BH).data, x, y, k;
   for (k = 0; k < mask.length; k++) mask[k] = d[k * 4] > 127 ? 1 : 0;
-  var ox = Math.floor(P.l * P.zx), oy = Math.floor(P.t * P.zy); glint = [];
+  var ox = Math.floor(P.l * P.zx), oy = Math.floor(P.t * P.zy);
   for (y = 0, k = 0; y < BH; y++) {
     var la = P.t - (y + 0.5) / P.zy, off = la > 90 || la < -90, wy = oy - y;
     for (x = 0; x < BW; x++, k++) {
@@ -547,11 +643,10 @@ function bake(now) {
       var wx = x + ox;
       if (mask[k]) {
         var coast = (x > 0 && !mask[k - 1]) || (x < BW - 1 && !mask[k + 1]) || (y > 0 && !mask[k - BW]) || (y < BH - 1 && !mask[k + BW]);
-        base[k] = coast ? C.lime : (((wx + wy) & 1) && hash2(wx, wy) > 0.55 ? C.green : C.forest);
+        base[k] = coast ? C.lime : C.forest; // solid dark green land, bright coastline
       } else {
         var h = hash2(wx, wy);
         base[k] = ((wx + wy) & 1) && h > 0.8 ? C.deep : C.navy;
-        if (h > 0.997) glint.push(k, wx, wy);
       }
     }
   }
@@ -571,6 +666,10 @@ function bake(now) {
     MAP.countries.forEach(function (L) { drawLine(L, STY.country); });
   }
   STY.motorway.w = z >= 250;
+  // our own big-road tiles, until OpenStreetMap's sharper roads have loaded for this whole view
+  var c1 = z >= TIERS[1].z ? visCells(1) : [], osmRoads = c1.length > 0 && c1.every(function (c) { var e = osmCells.get(c.key); return e && e.state === "ok"; });
+  if (!osmRoads) { var ne = neRoadsVisible(); [2, 1, 0].forEach(function (kind) { if (z < NE_ROAD_Z[kind]) return;
+    ne.forEach(function (lines) { lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[NE_ROAD_STY[kind]]); }); }); }); }
   if (layers.roads) ["minor", "tertiary", "secondary", "primary", "trunk", "motorway"].forEach(function (kind) {
     osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[kind]); }); }); });
   });
@@ -591,7 +690,7 @@ function layoutPlaces(osm) {
   list.sort(function (a, c) { return c.score - a.score; });
   var boxes = [], seen = {};
   function hits(bx) {
-    if (bx[0] < 1 || bx[1] < 1 || bx[0] + bx[2] > BW - 1 || bx[1] + bx[3] > BH - 15) return true;
+    if (bx[0] < 1 || bx[1] < 1 || bx[0] + bx[2] > BW - 1 || bx[1] + bx[3] > BH - 15 - SAFE_B) return true;
     for (var i = 0; i < boxes.length; i++) { var o = boxes[i]; if (bx[0] < o[0] + o[2] && o[0] < bx[0] + bx[2] && bx[1] < o[1] + o[3] && o[1] < bx[1] + bx[3]) return true; }
     return false;
   }
@@ -620,12 +719,10 @@ function draw(now) {
   var wall = Date.now(), simNow = wall;
   if (mode === "replay") { var f = ((now - replay0) / 1000 % REPLAY_S) / REPLAY_S; simNow = wall - 24 * 3600e3 * (1 - f); }
   shakeOff = now < shakeUntil ? Math.round((Math.random() - 0.5) * 3) : 0;
-  proj();
+  fitPoles(); proj();
   var busy = interacting(now), key = [view.lon.toFixed(6), view.lat.toFixed(6), view.z.toFixed(5), BW, BH].join(",");
   if (key !== bakeKey || MAP.ver !== bakeVer || busy !== bake.busy) { if (key !== bakeKey) viewMovedAt = now; bakeKey = key; bakeVer = MAP.ver; bake.busy = busy; bake(now); }
   px32.set(base);
-  var gt = Math.floor(now / 350);
-  for (var gi = 0; gi < glint.length; gi += 3) if (hash2(glint[gi + 1] + gt, glint[gi + 2]) > 0.6) px32[glint[gi]] = C.sky;
 
   // triangles: every quake today, colored and sized by magnitude; solid for the last 6 hours, hollow after that
   TAPS = []; var list = [];
@@ -634,7 +731,10 @@ function draw(now) {
   list.forEach(function (q) {
     var s3 = toScr(q.lat, q.lon); if (s3[0] < -40 || s3[0] > BW + 40 || s3[1] < -40 || s3[1] > BH + 40) return;
     var age = (simNow - q.time) / 1000, sx = Math.round(s3[0]), sy = Math.round(s3[1]);
-    if (mode === "live" && age < 3600) {
+    if (q.id === sel) { // selected: repeating bursts
+      var sr = Math.max(2, Math.round(q.mag)), cyc = Math.max(RIPPLE.selectedEvery, sr * RIPPLE.gap + RIPPLE.selectedLife), sa = (now - selAt) / 1000;
+      drawRipples(sx, sy, q, sa % cyc, sr, 1, RIPPLE.selectedLife);
+    } else if (mode === "live" && age < 3600) {
       drawRipples(sx, sy, q, age % RIPPLE.liveEvery, Math.max(1, Math.round(q.mag)), 0.45 + 0.55 * (1 - age / 3600), RIPPLE.liveLife);
     } else if (mode === "replay") {
       var ra = age / (24 * 3600 / REPLAY_S), rr = Math.max(2, Math.round(q.mag * RIPPLE.replayRings));
@@ -664,7 +764,6 @@ function draw(now) {
     var s5 = toScr(q0.lat, q0.lon), on = Math.floor(now / 300) % 2 ? C.white : C.gold, r = 5, cx = Math.round(s5[0]), cy = Math.round(s5[1]);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (cc) { for (var t = 0; t < 3; t++) { plot(cx + cc[0] * r - cc[0] * t, cy + cc[1] * r, on); plot(cx + cc[0] * r, cy + cc[1] * r - cc[1] * t, on); } });
   }
-  if (osmBusy && Math.floor(now / 400) % 2) ptext(px32, "LOADING MAP", 3, BH - 22, C.ice);
   b.putImageData(img, 0, 0);
   hud(now, simNow);
 }
@@ -678,14 +777,14 @@ function text(s, x, y, col, align) {
   return w;
 }
 function frameBox(x, y, w, h) { b.fillStyle = NES.black; b.fillRect(x, y, w, h); b.fillStyle = NES.white; b.fillRect(x, y, w, 1); b.fillRect(x, y + h - 1, w, 1); b.fillRect(x, y, 1, h); b.fillRect(x + w - 1, y, 1, h); }
-/* The ticker: the newest quakes, with the red QUAKE POND header (count and biggest today) between every few.
+/* The ticker: the newest quakes, with the red 8-BIT QUAKE header (count and biggest today) between every few.
    It is rebuilt only when a loop finishes, so text never jumps mid-scroll. Tapping a quake in it flies there. */
 var TICK_N = 6, TICK_EVERY = 3, tick = { segs: [], w: 0, x: 0, empty: true };
 function buildTicker(simNow) {
   var n = 0, big = null, recent = [];
   quakes.forEach(function (q) { if (q.time <= simNow && simNow - q.time < 24 * 3600e3) { n++; recent.push(q); if (!big || q.mag > big.mag) big = q; } });
   recent.sort(function (a, c) { return c.time - a.time; });
-  var head = (mode === "replay" ? "QUAKE POND REPLAY" : demo ? "DEMO POND" : "QUAKE POND") + "  " + n + " TODAY" + (big ? "  TOP M" + big.mag.toFixed(1) : "") + "  NEWEST";
+  var head = (mode === "replay" ? "8-BIT QUAKE REPLAY" : demo ? "8-BIT QUAKE DEMO" : "8-BIT QUAKE") + "  " + n + " IN 24H" + (big ? "  TOP M" + big.mag.toFixed(1) : "") + "  NEWEST";
   var segs = [], x = 0;
   b.font = "8px 'Press Start 2P', monospace";
   function add(s, col, id) { var w = b.measureText(s + "     ").width; segs.push({ x: x, w: w, s: s, col: col, id: id }); x += w; }
@@ -698,13 +797,13 @@ function buildTicker(simNow) {
 }
 function hud(now, simNow) {
   if (mode === "replay") { // replay clock, only while replaying
-    var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : 3;
+    var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : SAFE_T + 3;
     var l1 = "REPLAY " + clockStr(simNow); b.font = "8px 'Press Start 2P', monospace";
     frameBox(3, hy, b.measureText(l1).width + 8, 15); text(l1, 7, hy + 4, NES.gold);
   }
   if (!tick.w || (tick.empty && quakes.size)) { buildTicker(simNow); tick.x = 0; }
   tick.x += 0.5; if (tick.x >= tick.w) { tick.x -= tick.w; buildTicker(simNow); }
-  var ty = BH - 12; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
+  var ty = BH - 12 - SAFE_B; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14 + SAFE_B); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
   for (var x0 = -tick.x; x0 < BW; x0 += tick.w) tick.segs.forEach(function (s) { var sx = x0 + s.x; if (sx < BW && sx + s.w > 0) text(s.s, sx, ty + 1, s.col); });
 }
 function tickerHit(x) { // x in buffer pixels; returns the segment under it
@@ -718,58 +817,113 @@ function clockStr(t) { return new Date(t).toLocaleTimeString("en-US", { hour: "n
 /* ================= card ================= */
 var $ = function (id) { return document.getElementById(id); };
 function select(id) {
-  var q = quakes.get(id); if (!q) return; sel = id;
+  var q = quakes.get(id); if (!q) return;
+  if (sel !== id) { sel = id; selAt = performance.now(); }
   $("cMag").textContent = "M" + q.mag.toFixed(1); $("cMag").style.background = NES[magColor(q.mag)];
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
   $("sDepth").textContent = depthStr(q.depth);
-  $("sFelt").textContent = q.tsunami ? "TSUNAMI FLAG" : q.felt ? q.felt + " PEOPLE" : "NO REPORTS";
-  var dy = (q.lat - cfg.lat) * 69, dx = (q.lon - cfg.lon) * 69 * Math.cos(cfg.lat * DEG), d = Math.hypot(dx, dy);
-  $("sDist").textContent = (d > 3000 ? "FAR AWAY" : Math.round(d).toLocaleString("en-US") + " MI");
+  $("sDist").textContent = Math.round(milesBetween(cfg.lat, cfg.lon, q.lat, q.lon)).toLocaleString("en-US") + " MI";
+  var f = feelFor(q); $("fLabel").textContent = f[0];
+  $("fText").textContent = f[1] + (q.tsunami ? " USGS FLAGGED THIS ONE FOR TSUNAMI REVIEW. THAT IS NOT A WARNING; CHECK TSUNAMI.GOV." : "");
   $("cLink").href = q.url; $("cLink").hidden = !!q.demo;
   $("card").hidden = false;
-  var bottom = !(innerWidth > innerHeight && innerHeight <= 520);
+  var bottom = DEV === "phone" && !(innerWidth > innerHeight && innerHeight <= 520);
+  document.documentElement.classList.add("carded");
   document.documentElement.style.setProperty("--cardh", bottom ? ($("card").offsetHeight + 8) + "px" : "0px");
+  fitSides();
 }
-function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); }
+/* plain words for how a quake feels. When USGS has a measured or reported intensity (MMI, or the "Did You Feel It?"
+   CDI) we use the official Modified Mercalli wording; otherwise a rough guide from magnitude, for someone near the center. */
+var MMI_WORDS = ["", "NOT FELT. ONLY INSTRUMENTS NOTICE IT.", "WEAK. A FEW PEOPLE AT REST, UPSTAIRS, MIGHT FEEL IT.",
+  "WEAK. FELT INDOORS, LIKE A LIGHT TRUCK GOING BY. HANGING THINGS SWING.",
+  "LIGHT. FELT BY MOST PEOPLE INDOORS. DISHES AND WINDOWS RATTLE, LIKE A HEAVY TRUCK HITTING THE HOUSE.",
+  "MODERATE. FELT BY NEARLY EVERYONE. SOME DISHES BREAK AND LOOSE THINGS TIP OVER.",
+  "STRONG. HARD TO WALK. FURNITURE MOVES, PLASTER CRACKS, THINGS FALL OFF SHELVES.",
+  "VERY STRONG. HARD TO STAND. POORLY BUILT BUILDINGS ARE DAMAGED.",
+  "SEVERE. ORDINARY BUILDINGS ARE BADLY DAMAGED. CHIMNEYS AND WALLS FALL.",
+  "VIOLENT. HEAVY DAMAGE EVEN TO WELL BUILT BUILDINGS.", "EXTREME. MOST BUILDINGS DESTROYED."];
+function feelFor(q) {
+  var deep = q.depth > 70 ? " IT WAS DEEP, SO THE SURFACE SHAKES LESS." : "";
+  // remote ocean quakes get near zero intensity because nobody is there, so only trust it when it says something
+  var i = Math.round(Math.max(q.mmi >= 2 ? q.mmi : 0, q.felt >= 3 ? q.cdi : 0));
+  if (i >= 2) return ["SHAKING NEAR THE CENTER: LEVEL " + Math.min(i, 10) + " OF 10 (USGS)", MMI_WORDS[Math.min(i, 10)]];
+  var m = q.mag, t = m < 2.5 ? "USUALLY NOT FELT. ONLY INSTRUMENTS NOTICE IT."
+    : m < 4 ? "OFTEN FELT RIGHT NEARBY, LIKE A TRUCK RUMBLING PAST. NO DAMAGE."
+    : m < 5 ? "FELT BY MOST PEOPLE NEARBY. WINDOWS AND DISHES RATTLE. DAMAGE IS RARE."
+    : m < 6 ? "STRONG NEAR THE CENTER. THINGS FALL OFF SHELVES AND WEAK BUILDINGS CAN CRACK."
+    : m < 7 ? "VERY STRONG NEAR THE CENTER. DAMAGE LIKELY CLOSE IN, FELT HUNDREDS OF MILES AWAY."
+    : "MAJOR. SERIOUS DAMAGE POSSIBLE OVER A LARGE AREA.";
+  return ["FEELS LIKE, NEAR THE CENTER (ROUGH GUIDE)", t + deep];
+}
+// straight-line distance over the curve of the Earth (haversine), in miles; Earth radius 3,958.8 mi
+function milesBetween(la1, lo1, la2, lo2) {
+  var a = Math.pow(Math.sin((la2 - la1) * DEG / 2), 2) + Math.cos(la1 * DEG) * Math.cos(la2 * DEG) * Math.pow(Math.sin((lo2 - lo1) * DEG / 2), 2);
+  return 2 * 3958.8 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); document.documentElement.classList.remove("carded"); fitSides(); }
+// hide zoom and replay while the card is open if they would climb into the top buttons
+function fitSides() {
+  var root = document.documentElement; root.classList.remove("squeezed"); if ($("card").hidden) return;
+  var z = $("zoom").getBoundingClientRect(), t = $("top").getBoundingClientRect(), c = $("card").getBoundingClientRect(), d = $("dock").getBoundingClientRect();
+  var hit = function (a, b2) { return a.left < b2.right && b2.left < a.right && a.top < b2.bottom && b2.top < a.bottom; };
+  if (z.top < t.bottom + 8 || hit(z, c) || hit(d, c)) root.classList.add("squeezed");
+}
 function openList() {
   var arr = []; quakes.forEach(function (q) { arr.push(q); });
   arr.sort(function (a, c) { return c.mag - a.mag; });
-  $("listNote").textContent = demo ? "USGS IS NOT ANSWERING, SO THESE ARE DEMO QUAKES." : arr.length + " QUAKES IN THE LAST 24 HOURS. TAP ONE TO DROP IT AGAIN.";
+  $("listNote").textContent = demo ? "USGS IS NOT ANSWERING, SO THESE ARE DEMO QUAKES." : arr.length + " QUAKES IN THE LAST 24 HOURS, BIGGEST FIRST. TAP ONE TO ZOOM THERE.";
   var box = $("quakes"); box.innerHTML = "";
   arr.slice(0, 40).forEach(function (q) {
     var bt = document.createElement("button"), m = document.createElement("b"), p = document.createElement("span"), t = document.createElement("em");
     m.textContent = "M" + q.mag.toFixed(1); m.style.color = NES[magColor(q.mag)];
     p.textContent = q.place.toUpperCase(); t.textContent = ago(q.time);
     bt.appendChild(m); bt.appendChild(p); bt.appendChild(t);
-    bt.addEventListener("click", function () { $("listSheet").hidden = true; flyTo(q); select(q.id); splash(q, false); });
+    bt.addEventListener("click", function () { $("listSheet").hidden = true; select(q.id); flyTo(q); });
     box.appendChild(bt);
   });
   $("listSheet").hidden = false;
 }
-function flyTo(q) { view.lon = q.lon; view.lat = q.lat; view.z = Math.min(ZMAX, Math.max(view.z, Math.max(BW, BH) / (reach(q.mag) * 5))); normLon(); }
+function flyTo(q) {
+  view.lon = q.lon; view.lat = q.lat; view.z = Math.min(ZMAX, Math.max(view.z, Math.max(BW, BH) / (reach(q.mag) * 5)));
+  var c = $("card"); if (!c.hidden) {
+    var r = c.getBoundingClientRect(), zx = view.z * kxFor(view.z, view.lat);
+    if (DEV === "phone" && r.top > innerHeight / 3) view.lat -= (innerHeight - r.top) / 2 / SCALE / view.z; // bottom card: move the quake up
+    else if (r.left > innerWidth / 3) view.lon += (innerWidth - r.left) / 2 / SCALE / zx; // side panel: move it left
+  }
+  view.lat = clamp(view.lat, -82, 82); normLon();
+}
 
 /* ================= controls ================= */
-function sync() {
-  $("bMode").textContent = mode === "live" ? "LIVE" : "24H";
-  $("bMode").classList.toggle("on", mode === "replay");
-  $("bSound").classList.toggle("on", sound);
+/* pixel icons for the buttons, drawn from rows of # like the sprites above */
+var ICONS = {
+  replay: ["....#####...", "..##.....#..", "###.......#.", "##...#.....#", "#.#..#.....#", ".....#.....#", ".....###...#", "...........#", ".#........#.", "..#......#..", "...######..."],
+  cog: [".....##.....", "..#..##..#..", ".###.##.###.", "..########..", "...##..##...", "####....####", "####....####", "...##..##...", "..########..", ".###.##.###.", "..#..##..#..", ".....##....."],
+  warn: [".....#.....", "....###....", "....###....", "...##.##...", "...##.##...", "..###.###..", "..###.###..", ".#########.", ".####.####.", "###########"],
+  x: ["##....##", "###..###", ".######.", "..####..", "..####..", ".######.", "###..###", "##....##"]
+};
+function pixSvg(rows) {
+  var d = ""; rows.forEach(function (r, y) { for (var x = 0; x < r.length; x++) if (r[x] === "#") d += "M" + x + " " + y + "h1v1h-1z"; });
+  return '<svg viewBox="0 0 ' + rows[0].length + " " + rows.length + '" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
 }
+document.querySelectorAll(".wicon").forEach(function (el) { el.innerHTML = pixSvg(ICONS.warn); });
+$("bKey").innerHTML = pixSvg(ICONS.cog); $("bMode").innerHTML = pixSvg(ICONS.replay);
+document.querySelectorAll(".x").forEach(function (bt) { bt.innerHTML = pixSvg(ICONS.x); bt.addEventListener("click", closeSheets); });
+function sync() {
+  $("bMode").classList.toggle("on", mode === "replay"); $("bMode").setAttribute("aria-pressed", mode === "replay" ? "true" : "false");
+  $("bMode").setAttribute("aria-label", mode === "replay" ? "Replaying the last 24 hours. Back to live" : "Replay the last 24 hours");
+}
+// sheets close with their X, with Escape, or with a tap anywhere outside the panel
+function closeSheets() { $("listSheet").hidden = true; $("keySheet").hidden = true; }
+document.querySelectorAll(".sheet").forEach(function (sh) { sh.addEventListener("click", function (e) { if (e.target === sh) closeSheets(); }); });
 $("bMode").addEventListener("click", function () { mode = mode === "live" ? "replay" : "live"; replay0 = performance.now(); tick.w = 0; sync(); });
-$("bSound").addEventListener("click", function () {
-  sound = !sound;
-  if (sound && !audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { sound = false; } }
-  if (audio && audio.state === "suspended") audio.resume();
-  sync(); if (sound) blip(3);
-});
 $("bList").addEventListener("click", openList);
-$("bListClose").addEventListener("click", function () { $("listSheet").hidden = true; });
 $("bWorld").addEventListener("click", function () { var us = $("bWorld").textContent === "USA"; if (us) usView(); else worldView(); $("bWorld").textContent = us ? "WORLD" : "USA"; });
 $("bIn").addEventListener("click", function () { zoomBy(1.6); });
 $("bOut").addEventListener("click", function () { zoomBy(1 / 1.6); });
 $("cClose").addEventListener("click", deselect);
 
-/* KEY sheet: legend drawn with the same pixel triangles as the map, then the layer switches */
+/* settings sheet: legend drawn with the same pixel triangles as the map, then the layer switches */
 function keyIcon(draw, w, h) {
   var c = document.createElement("canvas"), k = c.getContext("2d"); c.width = w; c.height = h; c.style.width = w * 3 + "px"; c.style.height = h * 3 + "px";
   draw(function (x, y, name) { k.fillStyle = NES[name]; k.fillRect(x, y, 1, 1); }); return c;
@@ -807,10 +961,16 @@ function drawLayers() {
 }
 function openKey() { drawLayers(); $("keySheet").hidden = false; }
 $("bKey").addEventListener("click", openKey);
-$("bKeyClose").addEventListener("click", function () { $("keySheet").hidden = true; });
-$("cDrop").addEventListener("click", function () { var q = sel && quakes.get(sel); if (q) { splash(q, false); blip(q.mag); } });
+$("bIntro").addEventListener("click", function () { closeSheets(); $("splash").hidden = false; $("bStart").focus(); });
+// east and west wrap forever, but the poles are hard edges: never zoom out past the whole world top to bottom,
+// and never pan past 90 degrees north or south, so no empty black band shows above or below the map
+function minZoom() { return BH / 180; }
+function fitPoles() {
+  if (view.z < minZoom()) view.z = minZoom();
+  var half = BH / 2 / view.z; view.lat = clamp(view.lat, -90 + half, 90 - half);
+}
 function zoomBy(f, ax, ay) {
-  var z0 = view.z, z1 = clamp(view.z * f, Math.min(BW / 360, BH / 170) * 0.9, ZMAX); if (z1 === z0) return;
+  var z0 = view.z, z1 = clamp(view.z * f, minZoom(), ZMAX); if (z1 === z0) return;
   if (ax != null) {
     var zx0 = z0 * kxFor(z0, view.lat), zx1 = z1 * kxFor(z1, view.lat);
     view.lon += (ax - BW / 2) * (1 / zx0 - 1 / zx1); view.lat -= (ay - BH / 2) * (1 / z0 - 1 / z1);
@@ -824,7 +984,11 @@ cv.addEventListener("pointerdown", function (e) {
   dragFrom = [e.clientX, e.clientY]; moved = 0;
 });
 cv.addEventListener("pointermove", function (e) {
-  if (!ptrs[e.pointerId]) return; ptrs[e.pointerId] = [e.clientX, e.clientY];
+  if (!ptrs[e.pointerId]) {
+    if (e.pointerType === "mouse") { var mx = e.clientX / SCALE, my = e.clientY / SCALE, over = my >= BH - 14 - SAFE_B && tickerHit(mx);
+      if (!over) TAPS.forEach(function (t) { if (Math.hypot(t[0] - mx, t[1] - my) < 9) over = true; }); cv.style.cursor = over ? "pointer" : "grab"; }
+    return;
+  } ptrs[e.pointerId] = [e.clientX, e.clientY];
   var ids = Object.keys(ptrs);
   if (ids.length === 2 && pinch0) { var a = ptrs[ids[0]], c = ptrs[ids[1]]; zoomBy(zoom0 * Math.hypot(a[0] - c[0], a[1] - c[1]) / pinch0 / view.z, (a[0] + c[0]) / 2 / SCALE, (a[1] + c[1]) / 2 / SCALE); moved = 99; return; }
   var dx = e.clientX - dragFrom[0], dy = e.clientY - dragFrom[1]; dragFrom = [e.clientX, e.clientY]; moved += Math.abs(dx) + Math.abs(dy);
@@ -833,21 +997,26 @@ cv.addEventListener("pointermove", function (e) {
 });
 function endPtr(e) {
   if (!ptrs[e.pointerId]) return; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length) return;
-  if (moved < 6 && e.clientY / SCALE >= BH - 14) { // tap on the ticker
+  if (moved < 6 && e.clientY / SCALE >= BH - 14 - SAFE_B) { // tap on the ticker
     var hit = tickerHit(e.clientX / SCALE), tq = hit && hit.id && quakes.get(hit.id);
-    if (tq) { flyTo(tq); select(tq.id); splash(tq, false); } else if (hit) openList();
+    if (tq) { select(tq.id); flyTo(tq); } else if (hit) openList();
   } else if (moved < 6) {
     var x = e.clientX / SCALE, y = e.clientY / SCALE, best = null, bd = 9;
     TAPS.forEach(function (t) { var d = Math.hypot(t[0] - x, t[1] - y); if (d < bd) { bd = d; best = t[2]; } });
-    if (best) { select(best); var q = quakes.get(best); if (q) splash(q, false); } else deselect();
+    if (best) select(best); else deselect();
   }
   pinch0 = 0;
 }
+// iPad and iPhone Safari pinch the whole page unless its own gesture events are stopped
+["gesturestart", "gesturechange"].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false }); });
 cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", endPtr);
 cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = performance.now(); zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX / SCALE, e.clientY / SCALE); }, { passive: false });
 addEventListener("keydown", function (e) {
-  if (e.key === "Escape") { deselect(); $("listSheet").hidden = true; $("keySheet").hidden = true; } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "r") $("bMode").click(); if (e.key === "s") $("bSound").click();
+  if (!$("splash").hidden) { if (e.key === "Enter" || e.key === " ") $("bStart").click(); return; }
+  if (e.key === "Escape") { deselect(); closeSheets(); } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "r") $("bMode").click();
   if (e.key === "+" || e.key === "=") zoomBy(1.5); if (e.key === "-") zoomBy(1 / 1.5);
+  var step = 20 / view.z, arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; // 20 map pixels per press
+  if (arrows) { e.preventDefault(); view.lon += arrows[0] * step / kxFor(view.z, view.lat); view.lat = clamp(view.lat + arrows[1] * step, -82, 82); normLon(); }
 });
 
 /* ================= loop and boot ================= */
@@ -860,18 +1029,23 @@ function frame(now) {
     if (o) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height); }
     ctx.drawImage(buf, o, o, BW * SCALE * sx, BH * SCALE * (cv.height / innerHeight));
     osmTick(now);
+    var osmOn = view.z >= TIERS[0].z && (layers.roads || layers.labels || layers.towns);
+    if ($("osm").hidden === osmOn) $("osm").hidden = !osmOn;
   }
   if (now - lastPoll > 10000) { lastPoll = now; poll(); }
   stepDemo(now);
   if (sel && (frame.n = (frame.n || 0) + 1) % 60 === 0) { var q = quakes.get(sel); if (q) $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time); }
   requestAnimationFrame(frame);
 }
-resize(); addEventListener("resize", resize); sync();
+resize(); addEventListener("resize", function () { resize(); if (sel) select(sel); }); sync();
 if (new URLSearchParams(location.search).get("demo") === "1") { live = false; startDemo(); }
 var fontsReady = document.fonts && document.fonts.load ? document.fonts.load("8px 'Press Start 2P'").catch(function () {}) : Promise.resolve();
 Promise.all([fetchData(WA + "land-110m.json"), fontsReady]).then(function (res) {
-  MAP.land110 = polysFrom(topojson.feature(res[0], res[0].objects.land)); $("loading").hidden = true; bump(); loadExtras();
-}).catch(function () { $("loading").textContent = "THE MAP DID NOT LOAD. RELOAD TO TRY AGAIN."; });
+  MAP.land110 = polysFrom(topojson.feature(res[0], res[0].objects.land)); bump(); loadExtras();
+  $("bStart").disabled = false; $("bStart").textContent = "PRESS START";
+}).catch(function () { $("bStart").textContent = "THE MAP DID NOT LOAD. RELOAD TO TRY AGAIN."; });
+// the intro shows on every visit, like a title screen
+$("bStart").addEventListener("click", function () { $("splash").hidden = true; });
 poll();
 requestAnimationFrame(frame);
 })();
