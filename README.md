@@ -54,6 +54,8 @@ python3 -m http.server 8787
 
 Any static server works. Opening the file directly also works in most browsers.
 
+To check layouts on desktop, phones and tablets (iPhone SE to iPad Pro, Android phones and tablets, portrait and landscape): `node tests/devices.js` with the server running. It needs Playwright and uses Chromium emulation, so it does not replace a real look on Safari.
+
 ## Deploy
 
 Cloudflare Pages, connected to this GitHub repo. `main` is production; every other branch gets a preview URL.

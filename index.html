@@ -24,7 +24,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--black); }
-body { font-family: var(--px); color: var(--white); user-select: none; -webkit-user-select: none; touch-action: none; }
+body { font-family: var(--px); color: var(--white); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
 #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 #top { position: fixed; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; z-index: 5; pointer-events: none; }
@@ -32,33 +32,33 @@ body { font-family: var(--px); color: var(--white); user-select: none; -webkit-u
 button { font: 12px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
 button:active, button.on { background: var(--white); color: var(--black); }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-#zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
+#zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
 #zoom button { font-size: 16px; width: 48px; }
-#dock { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px)); z-index: 5; display: flex; gap: 8px; }
+#dock { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px)); z-index: 5; display: flex; gap: 8px; }
 #dock button { width: 48px; display: grid; place-items: center; }
 .icon svg { width: 24px; height: auto; display: block; }
 /* OpenStreetMap asks for visible credit wherever its data is on screen */
-#osm { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px) + 60px); z-index: 4; font-size: 8px; color: rgba(252, 252, 252, 0.7); pointer-events: none; text-shadow: 1px 1px 0 #000; }
+#osm { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(var(--tick, 26px) + 8px + var(--cardh, 0px) + 60px); z-index: 4; font-size: 8px; color: rgba(252, 252, 252, 0.7); pointer-events: none; text-shadow: 1px 1px 0 #000; }
 
-#card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px)); width: min(460px, calc(100% - 16px)); z-index: 6;
+#card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tick, 26px) + 8px); width: min(460px, calc(100% - 16px)); z-index: 6; max-height: calc(100% - var(--tick, 26px) - 8px - 64px - env(safe-area-inset-top, 0px)); overflow: auto; touch-action: pan-y; overscroll-behavior: contain;
   background: var(--black); border: 4px solid var(--white); padding: 12px; box-shadow: 4px 4px 0 var(--navy); }
 .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 #cMag { font-size: 24px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
 #cPlace { font-size: 12px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px; }
-.stats div { border: 2px solid var(--grey); padding: 6px; min-width: 0; }
-.stats i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
-.stats span { font-size: 11px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.stats div { border: 2px solid var(--grey); padding: 5px; min-width: 0; }
+.stats i { display: block; font-style: normal; font-size: 8px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
+.stats span { font-size: 10px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
 .feel { border: 2px solid var(--grey); padding: 6px; margin-bottom: 10px; }
 .feel i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
 .feel span { font-size: 11px; line-height: 1.6; display: block; }
 #cLink { display: grid; place-items: center; font: 12px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
 @media (orientation: landscape) and (max-height: 520px) {
-  #card { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; top: 64px; bottom: auto; width: min(320px, 46%); max-height: calc(100% - 64px - var(--tick, 26px) - 72px); overflow: auto; padding: 10px; }
+  #card { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; top: max(8px, env(safe-area-inset-top, 0px)); bottom: auto; width: min(320px, 46%); max-height: calc(100% - 16px - var(--tick, 26px)); overflow: auto; touch-action: pan-y; padding: 10px; }
 }
 
 .sheet { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: grid; place-items: center; padding: 16px; }
-.panel { width: min(480px, 100%); max-height: 100%; overflow: auto; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
+.panel { width: min(480px, 100%); max-height: 100%; overflow: auto; touch-action: pan-y; overscroll-behavior: contain; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
 .panel h2 { margin: 0 0 10px; font-size: 16px; font-weight: 400; color: var(--gold); }
 .panel h3 { margin: 18px 0 10px; font-size: 12px; font-weight: 400; color: var(--gold); }
 .panel a { color: var(--sky); }
@@ -77,7 +77,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .key div { display: flex; align-items: center; gap: 12px; font-size: 10px; line-height: 1.6; white-space: pre-wrap; }
 .key canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: none; }
 .key .ic { width: 36px; display: flex; justify-content: center; flex: none; }
-#splash { position: fixed; inset: 0; z-index: 20; background: var(--black); display: grid; place-items: center; padding: 16px; overflow: auto; }
+#splash { position: fixed; inset: 0; z-index: 20; background: var(--black); display: grid; padding: 16px; overflow: auto; touch-action: pan-y; }
+/* margin auto centers it but, unlike place-items, still lets a too-tall panel scroll from its top */
+#splash .panel { max-height: none; margin: auto; }
 #splash .panel { text-align: center; padding: 28px 20px; min-height: min(660px, calc(100dvh - 32px)); display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
 #splash .panel p { line-height: 2.1; margin-bottom: 22px; }
 #splash h1 { margin: 10px 0 28px; font-size: 28px; font-weight: 400; color: var(--gold); line-height: 1.3; }
@@ -85,12 +87,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .panel p.warn { color: var(--red); display: flex; gap: 10px; align-items: flex-start; }
 .panel p.warn .wicon svg { width: 22px; height: auto; display: block; color: var(--red); }
 .panel p.warn .wicon { flex: none; padding-top: 2px; }
+@media (max-height: 640px) {
+  #splash .panel { min-height: 0; padding: 14px 16px; }
+  #splash h1 { margin: 0 0 10px; font-size: 22px; }
+  #splash .panel p { line-height: 1.8; margin-bottom: 10px; }
+}
+/* while a card is open on a short screen there is no room for side buttons; pinch still zooms */
+.squeezed #zoom, .squeezed #dock, .squeezed #osm { display: none; }
 #bStart { width: 100%; font-size: 14px; margin-top: 4px; }
 #bStart[disabled] { color: var(--grey); border-color: var(--grey); cursor: default; }
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="safe" aria-hidden="true" style="position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);"></div>
 <div id="splash" role="dialog" aria-labelledby="splashTitle">
   <div class="panel">
     <h1 id="splashTitle">8-BIT QUAKE</h1>
@@ -122,7 +132,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <div class="stats">
     <div><i>WHEN</i><span id="sWhen"></span></div>
     <div><i>DEPTH</i><span id="sDepth"></span></div>
-    <div><i>MILES FROM YOU</i><span id="sDist"></span></div>
+    <div><i>FROM YOU</i><span id="sDist"></span></div>
   </div>
   <div class="feel"><i id="fLabel">WHAT IT FEELS LIKE</i><span id="fText"></span></div>
   <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
@@ -174,13 +184,16 @@ var layers = { labels: true, borders: true, roads: true, towns: true, buzz: true
 try { var savedL = JSON.parse(localStorage.getItem("quakepond.layers") || "null"); if (savedL) Object.keys(layers).forEach(function (k) { if (typeof savedL[k] === "boolean") layers[k] = savedL[k]; }); } catch (e) {}
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 var buf = document.createElement("canvas"), b = buf.getContext("2d");
-var BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
+var SAFE_T = 0, SAFE_B = 0, BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
 function resize() {
   var w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
   SCALE = Math.min(w, h) / SHORT; BW = Math.ceil(w / SCALE); BH = Math.ceil(h / SCALE);
   buf.width = BW; buf.height = BH; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   img = b.createImageData(BW, BH); px32 = new Uint32Array(img.data.buffer);
-  document.documentElement.style.setProperty("--tick", Math.ceil(16 * SCALE) + "px");
+  // iPhone notch and home bar: keep the ticker above the home bar and map messages below the status bar (in buffer pixels)
+  var sp = getComputedStyle(document.getElementById("safe"));
+  SAFE_T = Math.ceil((parseFloat(sp.paddingTop) || 0) / SCALE); SAFE_B = Math.ceil((parseFloat(sp.paddingBottom) || 0) / SCALE);
+  document.documentElement.style.setProperty("--tick", Math.ceil((16 + SAFE_B) * SCALE) + "px");
   if (!view.z) worldView();
 }
 var clamp = function (v, a, c) { return v < a ? a : v > c ? c : v; };
@@ -625,7 +638,7 @@ function layoutPlaces(osm) {
   list.sort(function (a, c) { return c.score - a.score; });
   var boxes = [], seen = {};
   function hits(bx) {
-    if (bx[0] < 1 || bx[1] < 1 || bx[0] + bx[2] > BW - 1 || bx[1] + bx[3] > BH - 15) return true;
+    if (bx[0] < 1 || bx[1] < 1 || bx[0] + bx[2] > BW - 1 || bx[1] + bx[3] > BH - 15 - SAFE_B) return true;
     for (var i = 0; i < boxes.length; i++) { var o = boxes[i]; if (bx[0] < o[0] + o[2] && o[0] < bx[0] + bx[2] && bx[1] < o[1] + o[3] && o[1] < bx[1] + bx[3]) return true; }
     return false;
   }
@@ -703,7 +716,7 @@ function draw(now) {
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (cc) { for (var t = 0; t < 3; t++) { plot(cx + cc[0] * r - cc[0] * t, cy + cc[1] * r, on); plot(cx + cc[0] * r, cy + cc[1] * r - cc[1] * t, on); } });
   }
   var roadMsg = now - osmFailAt < 8000 ? "ROAD SERVER BUSY. RETRYING" : osmBusy ? "LOADING ROADS" : "";
-  if (roadMsg && (roadMsg[0] === "R" || Math.floor(now / 400) % 2)) ptext(px32, roadMsg, 3, 3, roadMsg[0] === "R" ? C.orange : C.ice);
+  if (roadMsg && (roadMsg[0] === "R" || Math.floor(now / 400) % 2)) ptext(px32, roadMsg, 3, SAFE_T + 3, roadMsg[0] === "R" ? C.orange : C.ice);
   b.putImageData(img, 0, 0);
   hud(now, simNow);
 }
@@ -737,13 +750,13 @@ function buildTicker(simNow) {
 }
 function hud(now, simNow) {
   if (mode === "replay") { // replay clock, only while replaying
-    var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : 3;
+    var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : SAFE_T + 3;
     var l1 = "REPLAY " + clockStr(simNow); b.font = "8px 'Press Start 2P', monospace";
     frameBox(3, hy, b.measureText(l1).width + 8, 15); text(l1, 7, hy + 4, NES.gold);
   }
   if (!tick.w || (tick.empty && quakes.size)) { buildTicker(simNow); tick.x = 0; }
   tick.x += 0.5; if (tick.x >= tick.w) { tick.x -= tick.w; buildTicker(simNow); }
-  var ty = BH - 12; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
+  var ty = BH - 12 - SAFE_B; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14 + SAFE_B); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
   for (var x0 = -tick.x; x0 < BW; x0 += tick.w) tick.segs.forEach(function (s) { var sx = x0 + s.x; if (sx < BW && sx + s.w > 0) text(s.s, sx, ty + 1, s.col); });
 }
 function tickerHit(x) { // x in buffer pixels; returns the segment under it
@@ -763,13 +776,14 @@ function select(id) {
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
   $("sDepth").textContent = depthStr(q.depth);
-  $("sDist").textContent = Math.round(milesBetween(cfg.lat, cfg.lon, q.lat, q.lon)).toLocaleString("en-US");
+  $("sDist").textContent = Math.round(milesBetween(cfg.lat, cfg.lon, q.lat, q.lon)).toLocaleString("en-US") + " MI";
   var f = feelFor(q); $("fLabel").textContent = f[0];
   $("fText").textContent = f[1] + (q.tsunami ? " USGS FLAGGED THIS ONE FOR TSUNAMI REVIEW. THAT IS NOT A WARNING; CHECK TSUNAMI.GOV." : "");
   $("cLink").href = q.url; $("cLink").hidden = !!q.demo;
   $("card").hidden = false;
   var bottom = !(innerWidth > innerHeight && innerHeight <= 520);
   document.documentElement.style.setProperty("--cardh", bottom ? ($("card").offsetHeight + 8) + "px" : "0px");
+  fitSides();
 }
 /* plain words for how a quake feels. When USGS has a measured or reported intensity (MMI, or the "Did You Feel It?"
    CDI) we use the official Modified Mercalli wording; otherwise a rough guide from magnitude, for someone near the center. */
@@ -799,7 +813,14 @@ function milesBetween(la1, lo1, la2, lo2) {
   var a = Math.pow(Math.sin((la2 - la1) * DEG / 2), 2) + Math.cos(la1 * DEG) * Math.cos(la2 * DEG) * Math.pow(Math.sin((lo2 - lo1) * DEG / 2), 2);
   return 2 * 3958.8 * Math.asin(Math.min(1, Math.sqrt(a)));
 }
-function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); }
+function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); fitSides(); }
+// hide zoom and replay while the card is open if they would climb into the top buttons
+function fitSides() {
+  var root = document.documentElement; root.classList.remove("squeezed"); if ($("card").hidden) return;
+  var z = $("zoom").getBoundingClientRect(), t = $("top").getBoundingClientRect(), c = $("card").getBoundingClientRect(), d = $("dock").getBoundingClientRect();
+  var hit = function (a, b2) { return a.left < b2.right && b2.left < a.right && a.top < b2.bottom && b2.top < a.bottom; };
+  if (z.top < t.bottom + 8 || hit(z, c) || hit(d, c)) root.classList.add("squeezed");
+}
 function openList() {
   var arr = []; quakes.forEach(function (q) { arr.push(q); });
   arr.sort(function (a, c) { return c.mag - a.mag; });
@@ -910,7 +931,7 @@ cv.addEventListener("pointermove", function (e) {
 });
 function endPtr(e) {
   if (!ptrs[e.pointerId]) return; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length) return;
-  if (moved < 6 && e.clientY / SCALE >= BH - 14) { // tap on the ticker
+  if (moved < 6 && e.clientY / SCALE >= BH - 14 - SAFE_B) { // tap on the ticker
     var hit = tickerHit(e.clientX / SCALE), tq = hit && hit.id && quakes.get(hit.id);
     if (tq) { flyTo(tq); select(tq.id); } else if (hit) openList();
   } else if (moved < 6) {
@@ -920,6 +941,8 @@ function endPtr(e) {
   }
   pinch0 = 0;
 }
+// iPad and iPhone Safari pinch the whole page unless its own gesture events are stopped
+["gesturestart", "gesturechange"].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false }); });
 cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", endPtr);
 cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = performance.now(); zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX / SCALE, e.clientY / SCALE); }, { passive: false });
 addEventListener("keydown", function (e) {
@@ -946,7 +969,7 @@ function frame(now) {
   if (sel && (frame.n = (frame.n || 0) + 1) % 60 === 0) { var q = quakes.get(sel); if (q) $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time); }
   requestAnimationFrame(frame);
 }
-resize(); addEventListener("resize", resize); sync();
+resize(); addEventListener("resize", function () { resize(); if (sel) select(sel); }); sync();
 if (new URLSearchParams(location.search).get("demo") === "1") { live = false; startDemo(); }
 var fontsReady = document.fonts && document.fonts.load ? document.fonts.load("8px 'Press Start 2P'").catch(function () {}) : Promise.resolve();
 Promise.all([fetchData(WA + "land-110m.json"), fontsReady]).then(function (res) {

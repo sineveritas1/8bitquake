@@ -29,6 +29,14 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - Count wording is "IN 24H", never "today": the feed is a rolling 24 hours.
 - Attribution line (USGS, Natural Earth, OpenStreetMap) must stay visible.
 
+## Devices
+
+- Must work on desktop, phones and tablets, Android and iOS, portrait and landscape. Run `node tests/devices.js` before merging layout changes; it should print `ok` for every device.
+- iPhone notch and home bar: the ticker is pushed up by the bottom safe-area inset (`SAFE_B`, read from the hidden `#safe` element) and `--tick` includes it, so everything stacked above the ticker uses `var(--tick) + 8px`.
+- The page itself never scrolls (`touch-action: none` on body); menus, the card and the title screen scroll inside themselves (`touch-action: pan-y`).
+- If the open card would push zoom or replay into the top buttons, `fitSides()` hides them (pinch still zooms).
+- Card stats are always three boxes in one row.
+
 ## Current step
 
 Live at `8bitquake.pages.dev` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
