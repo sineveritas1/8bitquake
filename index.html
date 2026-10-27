@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#000000" />
+<title>Quake Pond</title>
+<meta name="description" content="Every earthquake on Earth, live from USGS, dropped like stones in an 8-bit pond, on a pixel map of nations, states, rivers, roads and towns." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<style>
+/* QUAKE POND: live USGS earthquakes as ripples on an 8-bit world. Everything is drawn into a tiny buffer
+   (150 pixels on the short side) using only colors from the NES palette, then scaled up with hard edges. */
+:root {
+  --black: #000000; --navy: #24188c; --blue: #0058f8; --sky: #3cbcfc; --ice: #a4e4fc;
+  --white: #fcfcfc; --gold: #f8b800; --red: #f83800; --grey: #7c7c7c;
+  --px: "Press Start 2P", ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--black); }
+body { font-family: var(--px); color: var(--white); user-select: none; -webkit-user-select: none; touch-action: none; }
+#cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+#top { position: fixed; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; z-index: 5; pointer-events: none; }
+#top button { pointer-events: auto; }
+button { font: 10px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
+button:active, button.on { background: var(--white); color: var(--black); }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+#zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
+#zoom button { font-size: 16px; width: 48px; }
+#credit { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); top: 50%; z-index: 4; font-size: 6px; line-height: 1.6; color: rgba(252, 252, 252, 0.55); pointer-events: none; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); }
+
+#card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px)); width: min(460px, calc(100% - 16px)); z-index: 6;
+  background: var(--black); border: 4px solid var(--white); padding: 12px; box-shadow: 4px 4px 0 var(--navy); }
+.ch { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+#cMag { font-size: 20px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
+#cPlace { font-size: 10px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.stats div { border: 2px solid var(--grey); padding: 6px; min-width: 0; }
+.stats i { display: block; font-style: normal; font-size: 7px; color: var(--ice); margin-bottom: 5px; }
+.stats span { font-size: 9px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
+.row2 { display: flex; gap: 8px; }
+.row2 > * { flex: 1; }
+.row2 a { display: grid; place-items: center; font: 10px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #card { left: auto; right: max(8px, env(safe-area-inset-right, 0px)); transform: none; top: 64px; bottom: auto; width: min(320px, 46%); max-height: calc(100% - 100px); overflow: auto; padding: 10px; }
+  #zoom { right: auto; left: max(22px, env(safe-area-inset-left, 0px) + 14px); }
+}
+
+.sheet { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: grid; place-items: center; padding: 16px; }
+.panel { width: min(480px, 100%); max-height: 100%; overflow: auto; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
+.panel h2 { margin: 0 0 10px; font-size: 13px; font-weight: 400; color: var(--gold); }
+.panel p { margin: 0 0 14px; color: var(--ice); font-size: 8px; line-height: 1.8; }
+.list { display: grid; gap: 6px; margin-bottom: 12px; }
+.list button { text-align: left; width: 100%; font-size: 8px; display: flex; gap: 10px; align-items: center; box-shadow: none; border-width: 2px; line-height: 1.5; }
+.list button b { font-weight: 400; min-width: 4.5em; }
+.list button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list button em { font-style: normal; color: var(--grey); white-space: nowrap; }
+#loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; background: var(--black); color: var(--white); font-size: 12px; line-height: 2; text-align: center; padding: 16px; }
+@media (prefers-reduced-motion: reduce) { #loading { animation: none; } }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="loading">QUAKE POND<br />PRESS START</div>
+<div id="top">
+  <button id="bMode" aria-label="Switch between live and a replay of the last 24 hours">LIVE</button>
+  <button id="bSound" aria-label="Turn the blip sound on or off">SND</button>
+  <button id="bList" aria-label="Biggest quakes today">LIST</button>
+  <button id="bWorld" aria-label="Switch between the whole world and the US">USA</button>
+</div>
+<div id="credit">QUAKES USGS. MAP NATURAL EARTH. ROADS AND TOWNS &copy; OPENSTREETMAP CONTRIBUTORS.</div>
+<div id="zoom">
+  <button id="bIn" aria-label="Zoom in">+</button>
+  <button id="bOut" aria-label="Zoom out">-</button>
+</div>
+<div id="card" hidden aria-live="polite">
+  <div class="ch">
+    <span id="cMag"></span>
+    <span id="cPlace"></span>
+    <button id="cClose" aria-label="Close">X</button>
+  </div>
+  <div class="stats">
+    <div><i>WHEN</i><span id="sWhen"></span></div>
+    <div><i>DEPTH</i><span id="sDepth"></span></div>
+    <div><i>FELT BY</i><span id="sFelt"></span></div>
+    <div><i>FROM YOU</i><span id="sDist"></span></div>
+  </div>
+  <div class="row2">
+    <button id="cDrop">DROP AGAIN</button>
+    <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
+  </div>
+</div>
+<div id="listSheet" class="sheet" hidden>
+  <div class="panel" role="dialog" aria-labelledby="listTitle">
+    <h2 id="listTitle">BIGGEST TODAY</h2>
+    <p id="listNote"></p>
+    <div class="list" id="quakes"></div>
+    <div class="list"><button id="bListClose">CLOSE</button></div>
+  </div>
+</div>
+<script>
+(function () {
+"use strict";
+
+/* ================= palette: NES colors only ================= */
+var NES = {
+  black: "#000000", night: "#00003c", navy: "#24188c", deep: "#0000a8", blue: "#0058f8", sky: "#3cbcfc", ice: "#a4e4fc", white: "#fcfcfc",
+  forest: "#005800", green: "#00a800", leaf: "#58d854", lime: "#b8f818", olive: "#503000", sand: "#ac7c00",
+  gold: "#f8b800", orange: "#f87858", red: "#f83800", crimson: "#a80020", pink: "#f878f8", grey: "#7c7c7c", ash: "#bcbcbc"
+};
+function px(h) { var n = parseInt(h.slice(1), 16); return 0xff000000 | ((n & 255) << 16) | (n & 0xff00) | (n >> 16); }
+var C = {}; Object.keys(NES).forEach(function (k) { C[k] = px(NES[k]); });
+function magColor(m) { return m >= 6 ? "red" : m >= 5 ? "orange" : m >= 4 ? "gold" : m >= 2.5 ? "white" : "ice"; }
+
+/* ================= setup ================= */
+var cfg = { name: "HURRICANE UT", lat: 37.1753, lon: -113.2899 };
+try { var saved = JSON.parse(localStorage.getItem("standby.cfg") || "null"); if (saved) { cfg.lat = +saved.lat || cfg.lat; cfg.lon = +saved.lon || cfg.lon; } } catch (e) {}
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var buf = document.createElement("canvas"), b = buf.getContext("2d");
+var BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
+function resize() {
+  var w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  SCALE = Math.min(w, h) / SHORT; BW = Math.ceil(w / SCALE); BH = Math.ceil(h / SCALE);
+  buf.width = BW; buf.height = BH; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  img = b.createImageData(BW, BH); px32 = new Uint32Array(img.data.buffer);
+  document.documentElement.style.setProperty("--tick", Math.ceil(16 * SCALE) + "px");
+  if (!view.z) worldView();
+}
+var clamp = function (v, a, c) { return v < a ? a : v > c ? c : v; };
+var DEG = Math.PI / 180;
+function hash2(x, y) { var h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+
+/* ================= tiny 3x5 pixel font for map labels ================= */
+var GLYPHS = {
+  A: ".#.#.#####.##.#", B: "##.#.###.#.###.", C: ".###..#..#...##", D: "##.#.##.##.###.", E: "####..##.#..###", F: "####..##.#..#..",
+  G: ".###..#.##.#.##", H: "#.##.#####.##.#", I: "###.#..#..#.###", J: "..#..#..##.#.#.", K: "#.##.###.#.##.#", L: "#..#..#..#..###",
+  M: "#.#####.##.##.#", N: "##.#.##.##.##.#", O: ".#.#.##.##.#.#.", P: "##.#.###.#..#..", Q: ".#.#.##.###..##", R: "##.#.###.#.##.#",
+  S: ".###...#...###.", T: "###.#..#..#..#.", U: "#.##.##.##.####", V: "#.##.##.##.#.#.", W: "#.##.##.#####.#", X: "#.##.#.#.#.##.#",
+  Y: "#.##.#.#..#..#.", Z: "###..#.#.#..###", "0": "####.##.##.####", "1": ".#.##..#..#.###", "2": "##...#.#.#..###", "3": "##...#.#...###.",
+  "4": "#.##.####..#..#", "5": "####..##...###.", "6": ".###..####.####", "7": "###..#.#..#..#.", "8": "####.#####.####", "9": "####.####..###.",
+  ".": ".............#.", "-": "......###......", "'": ".#..#..........", " ": "..............."
+};
+function textW(s) { return s.length * 4 - 1; }
+function ptext(arr, s, x, y, col) {
+  for (var pass = 0; pass < 2; pass++) {
+    for (var n = 0; n < s.length; n++) {
+      var g = GLYPHS[s[n]]; if (!g) continue;
+      for (var i = 0; i < 15; i++) {
+        if (g[i] !== "#") continue;
+        var gx = x + n * 4 + (i % 3), gy = y + ((i / 3) | 0);
+        if (pass) setPix(arr, gx, gy, col);
+        else for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) setPix(arr, gx + ox, gy + oy, C.black);
+      }
+    }
+  }
+}
+function setPix(arr, x, y, c) { if (x >= 0 && y >= 0 && x < BW && y < BH) arr[y * BW + x] = c; }
+function cleanName(s) {
+  if (!s) return "";
+  if (s.normalize) s = s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  s = s.toUpperCase().replace(/[^A-Z0-9 .'\-]/g, "").replace(/\s+/g, " ").trim();
+  return s.length > 16 ? s.slice(0, 15).trim() + "." : s;
+}
+
+/* ================= building sprites ================= */
+var SPAL = { k: "black", a: "ash", w: "white", r: "red", y: "gold", g: "grey", s: "sand" };
+function sprite(rows) { var out = { w: rows[0].length, h: rows.length, px: [] }; rows.forEach(function (r, y) { for (var x = 0; x < r.length; x++) if (r[x] !== ".") out.px.push(x, y, C[SPAL[r[x]]]); }); return out; }
+var SPR = {
+  castle: sprite(["....kk...", "....krk..", "....kk...", "kkk.k.kkk", "kakkakkak", "kaaaaaaak", "kakaaakak", "kaaakaaak", "kaakykaak", "kkkkkkkkk"]),
+  sky: sprite(["...kkk...", "...kak...", "...kykkkk", "kkkkakkyk", "kakkykkak", "kykkakkyk", "kakkykkak", "kykkakkak", "kkkkkkkkk"]),
+  city: sprite(["kkk....", "kyk....", "kakkkkk", "kykkyak", "kakkaak", "kykkayk", "kkkkkkk"]),
+  house: sprite(["..k..", ".krk.", "krrrk", "kayak", "kkkkk"]),
+  hut: sprite([".k.", "krk", "kak", "kkk"])
+};
+function blit(arr, s, x, y) { var p = s.px; for (var i = 0; i < p.length; i += 3) setPix(arr, x + p[i], y + p[i + 1], p[i + 2]); }
+
+/* ================= geometry helpers ================= */
+function geomsOf(x) { return x.type === "FeatureCollection" ? x.features.map(function (f) { return f.geometry; }) : x.type === "Feature" ? [x.geometry] : [x]; }
+function unwrap(ring) { // longitudes made continuous across the date line
+  var out = new Float64Array(ring.length * 2), prev = null, off = 0;
+  for (var i = 0; i < ring.length; i++) {
+    var lo = ring[i][0]; if (prev != null) { var d = lo + off - prev; if (d > 180) off -= 360; else if (d < -180) off += 360; }
+    lo += off; prev = lo; out[i * 2] = lo; out[i * 2 + 1] = ring[i][1];
+  }
+  return out;
+}
+function bbOf(list) { var bb = [1e9, 1e9, -1e9, -1e9]; list.forEach(function (a) { for (var i = 0; i < a.length; i += 2) { if (a[i] < bb[0]) bb[0] = a[i]; if (a[i] > bb[2]) bb[2] = a[i]; if (a[i + 1] < bb[1]) bb[1] = a[i + 1]; if (a[i + 1] > bb[3]) bb[3] = a[i + 1]; } }); return bb; }
+function polysFrom(x) {
+  var out = [];
+  geomsOf(x).forEach(function (g) {
+    if (!g) return;
+    var polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+    polys.forEach(function (poly) { var rings = poly.map(unwrap); out.push({ rings: rings, bb: bbOf(rings) }); });
+  });
+  return out;
+}
+function linesFrom(x, kind, ranks) {
+  var out = [], gs = geomsOf(x);
+  gs.forEach(function (g, n) {
+    if (!g) return;
+    var ls = g.type === "LineString" ? [g.coordinates] : g.type === "MultiLineString" ? g.coordinates : [];
+    ls.forEach(function (l) { var p = unwrap(l); out.push({ pts: p, bb: bbOf([p]), kind: kind, rank: ranks ? ranks[n] : 0 }); });
+  });
+  return out;
+}
+
+/* ================= map data: Natural Earth for the world, OpenStreetMap when zoomed in ================= */
+var WA = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/";
+function neUrls(f) { return ["https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/" + f + ".geojson", "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/" + f + ".geojson"]; }
+async function fetchData(url) { var r = await fetch(url); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+async function fetchAny(urls) { var err; for (var i = 0; i < urls.length; i++) { try { return await fetchData(urls[i]); } catch (e) { err = e; } } throw err; }
+var MAP = { land110: null, land50: null, land10: null, lakes: null, rivers: [], countries: [], states: [], places50: null, places10: null, ver: 0 }, want = {};
+function bump() { MAP.ver++; }
+function nePlaces(fc) {
+  return fc.features.map(function (f) {
+    var p = f.properties, g = f.geometry.coordinates, pop = p.pop_max || 0, cap = p.adm0cap == 1;
+    return { lat: g[1], lon: g[0], name: cleanName(p.nameascii || p.name), pop: pop, cap: cap, kind: "ne", score: pop * (cap ? 3 : 1), mz: 256 * Math.pow(2, p.min_zoom || 6) / 360 / 3 };
+  }).filter(function (p) { return p.name.length > 1; });
+}
+function loadExtras() {
+  fetchData(WA + "countries-50m.json").then(function (t) {
+    MAP.land50 = polysFrom(topojson.merge(t, t.objects.countries.geometries));
+    MAP.countries = linesFrom(topojson.mesh(t, t.objects.countries, function (a, c) { return a !== c; }), "country");
+    bump();
+  }).catch(function () {});
+  fetchAny(neUrls("ne_50m_lakes")).then(function (j) { MAP.lakes = polysFrom(j); bump(); }).catch(function () {});
+  fetchAny(neUrls("ne_50m_rivers_lake_centerlines")).then(function (j) { MAP.rivers = linesFrom(j, "river", j.features.map(function (f) { return f.properties.scalerank || 6; })); bump(); }).catch(function () {});
+  fetchAny(neUrls("ne_50m_admin_1_states_provinces_lines")).then(function (j) { MAP.states = linesFrom(j, "state"); bump(); }).catch(function () {});
+  fetchAny(neUrls("ne_50m_populated_places_simple")).then(function (j) { MAP.places50 = nePlaces(j); bump(); }).catch(function () {});
+}
+function lazy(name, fn) { if (want[name]) return; want[name] = true; fn().then(bump).catch(function () { want[name] = false; }); }
+function loadLand10() { lazy("land10", function () { return fetchData(WA + "land-10m.json").then(function (t) { MAP.land10 = polysFrom(topojson.feature(t, t.objects.land)); }); }); }
+function loadPlaces10() { lazy("places10", function () { return fetchAny(neUrls("ne_10m_populated_places_simple")).then(function (j) { MAP.places10 = nePlaces(j); }); }); }
+
+/* OpenStreetMap through Overpass, fetched one grid cell at a time once the view settles.
+   Three tiers: highways and towns, then main roads, rivers and villages, then town streets. */
+var TIERS = [
+  { z: 55, cell: 2, q: 'way["highway"~"^(motorway|trunk)$"]({b});node["place"~"^(city|town)$"]({b});' },
+  { z: 150, cell: 0.5, q: 'way["highway"~"^(primary|secondary)$"]({b});way["waterway"="river"]({b});node["place"="village"]({b});' },
+  { z: 380, cell: 0.25, q: 'way["highway"~"^(tertiary|unclassified|residential)$"]({b});node["place"~"^(hamlet|suburb|neighbourhood)$"]({b});' }
+];
+var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+var HW = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", unclassified: "minor", residential: "minor" };
+var PLACE_POP = { city: 2e5, town: 2e4, village: 1500, hamlet: 150, suburb: 400, neighbourhood: 300 };
+var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0;
+function visCells(ti) {
+  var T = TIERS[ti], c = T.cell, out = [];
+  var j0 = Math.floor(Math.max(P.b, -84) / c), j1 = Math.floor(Math.min(P.t, 84) / c), i0 = Math.floor(P.l / c), i1 = Math.floor(P.r / c);
+  if ((j1 - j0 + 1) * (i1 - i0 + 1) > 40) return out;
+  for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+    var lo = ((i * c + 180) % 360 + 360) % 360 - 180, ci = Math.round(lo / c);
+    var dx = (i + 0.5) * c - view.lon, dy = (j + 0.5) * c - view.lat;
+    out.push({ key: ti + ":" + ci + ":" + j, ti: ti, w: ci * c, s: j * c, d: dx * dx + dy * dy });
+  }
+  return out.sort(function (a, c2) { return a.d - c2.d; });
+}
+function parseOSM(j) {
+  var lines = [], places = [];
+  (j.elements || []).forEach(function (el) {
+    var t = el.tags || {};
+    if (el.type === "way" && el.geometry) {
+      var kind = t.waterway === "river" ? "river" : HW[t.highway]; if (!kind) return;
+      var g = el.geometry.filter(Boolean); if (g.length < 2) return;
+      var p = unwrap(g.map(function (n) { return [n.lon, n.lat]; }));
+      lines.push({ pts: p, bb: bbOf([p]), kind: kind });
+    } else if (el.type === "node" && t.place) {
+      var name = cleanName(t["name:en"] || t.name); if (name.length < 2) return;
+      var pop = parseInt(String(t.population || "").replace(/\D/g, ""), 10) || PLACE_POP[t.place] || 100;
+      var area = t.place === "suburb" || t.place === "neighbourhood";
+      places.push({ lat: el.lat, lon: el.lon, name: name, pop: pop, cap: false, kind: area ? "area" : t.place, score: area ? pop / 10 : pop, mz: 0 });
+    }
+  });
+  return { lines: lines, places: places };
+}
+async function osmTick(now) {
+  if (osmBusy || now < osmCool || now - viewMovedAt < 700 || interacting(now) || !P.zx) return;
+  var next = null;
+  for (var ti = 0; ti < TIERS.length && !next; ti++) {
+    if (view.z < TIERS[ti].z) break;
+    var cells = visCells(ti);
+    for (var i = 0; i < cells.length; i++) { var e = osmCells.get(cells[i].key); if (!e || (e.state === "err" && now > e.retry)) { next = cells[i]; break; } }
+  }
+  if (!next) return;
+  var c = TIERS[next.ti].cell, bbox = [next.s, next.w, next.s + c, next.w + c].map(function (v) { return v.toFixed(4); }).join(",");
+  var q = "[out:json][timeout:25];(" + TIERS[next.ti].q.replace(/\{b\}/g, bbox) + ");out geom qt;";
+  osmBusy = true; osmCells.set(next.key, { state: "loading" });
+  try {
+    var r = await fetch(OVERPASS[ovp], { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var data = parseOSM(await r.json());
+    osmCells.set(next.key, { state: "ok", lines: data.lines, places: data.places, t: now });
+    if (osmCells.size > 300) { var oldest = null; osmCells.forEach(function (v, k) { if (v.state === "ok" && (!oldest || v.t < osmCells.get(oldest).t)) oldest = k; }); if (oldest) osmCells.delete(oldest); }
+    bump();
+  } catch (err) {
+    osmCells.set(next.key, { state: "err", retry: performance.now() + 60000 });
+    ovp = (ovp + 1) % OVERPASS.length; osmCool = performance.now() + 4000;
+  }
+  osmBusy = false;
+}
+function osmVisible(ti) { var out = []; if (view.z < TIERS[ti].z) return out; visCells(ti).forEach(function (c) { var e = osmCells.get(c.key); if (e && e.state === "ok") out.push(e); }); return out; }
+
+/* ================= quakes from USGS =================
+   The day feed loads first and every 5 minutes; the hour feed every 60 seconds, which is as often as USGS updates. */
+var FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/";
+var quakes = new Map(), splashes = [], live = false, demo = false, lastHour = 0, lastDay = 0, firstLoad = true, latest = null, failCount = 0;
+function addFeed(j) {
+  var now = Date.now(), fresh = [];
+  (j.features || []).forEach(function (f) {
+    var p = f.properties || {}, g = (f.geometry || {}).coordinates || [];
+    if (typeof g[0] !== "number" || typeof p.mag !== "number") return;
+    var q = quakes.get(f.id);
+    var rec = { id: f.id, lon: g[0], lat: g[1], depth: g[2] || 0, mag: p.mag, place: p.place || "Unknown place", time: p.time, url: p.url || "https://earthquake.usgs.gov/",
+      felt: p.felt || 0, tsunami: !!p.tsunami, alert: p.alert || "", type: p.type || "earthquake" };
+    if (!q) { quakes.set(f.id, rec); if (!firstLoad && now - rec.time < 3 * 3600e3) fresh.push(rec); }
+    else Object.assign(q, rec);
+  });
+  quakes.forEach(function (q, k) { if (now - q.time > 26 * 3600e3) quakes.delete(k); });
+  fresh.sort(function (a, c) { return a.time - c.time; }).forEach(function (q, i) { setTimeout(function () { splash(q, true); }, i * 700); });
+  firstLoad = false;
+  updateLatest();
+}
+function updateLatest() { latest = null; quakes.forEach(function (q) { if (!latest || q.time > latest.time) latest = q; }); }
+async function getJSON(url) { var r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+async function poll() {
+  var now = Date.now(), url = null;
+  if (!live || now - lastDay > 300e3) url = "all_day";
+  else if (now - lastHour > 60e3) url = "all_hour";
+  if (!url) return;
+  try {
+    var j = await getJSON(FEED + url + ".geojson");
+    if (demo) endDemo();
+    addFeed(j);
+    if (url === "all_day") lastDay = now;
+    lastHour = now; live = true; failCount = 0;
+  } catch (e) { failCount++; if (!live && failCount >= 2) startDemo(); }
+}
+
+/* demo quakes along real fault zones, only when USGS does not answer, always labeled */
+var ZONES = [[35.9, -120.5], [61.5, -150], [19.4, -155.3], [38.8, -122.8], [33.2, -116], [44.4, -110.7], [36.5, 140.5], [-33, -71.5], [-6.5, 106], [38, 22], [28.2, 84.7], [-41, 174.5], [13, -88.5], [36.6, -97.6], [37.2, -113.3]];
+function demoQuake(now, back) {
+  var z = ZONES[Math.floor(Math.random() * ZONES.length)], m = Math.max(0.8, -Math.log(Math.random()) * 1.1 + 0.8);
+  return { id: "demo" + Math.random(), lat: z[0] + (Math.random() - 0.5) * 3, lon: z[1] + (Math.random() - 0.5) * 3, depth: Math.random() * 30, mag: Math.round(m * 10) / 10,
+    place: "DEMO QUAKE", time: now - back, url: "https://earthquake.usgs.gov/", felt: 0, tsunami: false, demo: true };
+}
+function startDemo() { if (demo) return; demo = true; var now = Date.now(); for (var i = 0; i < 180; i++) { var q = demoQuake(now, Math.random() * 24 * 3600e3); quakes.set(q.id, q); } updateLatest(); }
+function endDemo() { demo = false; quakes.forEach(function (q, k) { if (q.demo) quakes.delete(k); }); updateLatest(); }
+var demoAt = 0;
+function stepDemo(now) { if (!demo || now - demoAt < 9000) return; demoAt = now; var q = demoQuake(Date.now(), 0); quakes.set(q.id, q); latest = q; splash(q, true); }
+
+/* ================= ripples ================= */
+function reach(m) { return 0.5 * Math.pow(1.55, m); } // ring radius in degrees: M2 1.2, M4 2.9, M6 6.9, M8 16.6
+function splash(q, isNew) {
+  splashes.push({ q: q, t0: performance.now(), rings: Math.max(2, Math.round(q.mag * 1.5)), big: true });
+  if (isNew) { latest = q; blip(q.mag); if (q.mag >= 5) shakeUntil = performance.now() + 900 + q.mag * 150; }
+}
+var shakeUntil = 0, shakeOff = 0;
+
+/* ================= sound ================= */
+var audio = null, sound = false;
+function blip(m) {
+  if (!sound || !audio) return;
+  var t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+  o.type = "square"; o.frequency.setValueAtTime(Math.max(90, 1100 - m * 130), t); o.frequency.exponentialRampToValueAtTime(Math.max(50, 500 - m * 60), t + 0.12 + m * 0.05);
+  g.gain.setValueAtTime(0.07, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15 + m * 0.07);
+  o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + 0.2 + m * 0.08);
+}
+
+/* ================= view =================
+   Plain lat/lon grid when zoomed out; when zoomed in, east-west is squeezed by the cosine of the latitude so towns are not stretched. */
+var view = { lon: -100, lat: 15, z: 0 }, mode = "live", sel = null, TAPS = [], replay0 = 0, REPLAY_S = 72;
+var P = { zx: 0, zy: 0, l: 0, r: 0, t: 0, b: 0 };
+function kxFor(z, lat) { var t = clamp((Math.log(z) - Math.log(8)) / (Math.log(40) - Math.log(8)), 0, 1); return 1 - t * (1 - Math.cos(clamp(lat, -75, 75) * DEG)); }
+function proj() {
+  P.zy = view.z; P.zx = view.z * kxFor(view.z, view.lat);
+  P.l = view.lon - BW / 2 / P.zx; P.r = view.lon + BW / 2 / P.zx; P.t = view.lat + BH / 2 / P.zy; P.b = view.lat - BH / 2 / P.zy;
+}
+function normLon() { view.lon = ((view.lon + 540) % 360 + 360) % 360 - 180; }
+function worldView() { view.lon = -100; view.lat = 15; view.z = Math.max(BW / 360, BH / 170); }
+function usView() { view.lon = -104; view.lat = 39; view.z = Math.max(BW / 62, BH / 30); }
+function toScr(la, lo) { var dx = ((lo - view.lon + 540) % 360) - 180; return [BW / 2 + dx * P.zx, BH / 2 - (la - view.lat) * P.zy]; }
+var ptrs = {}, lastWheel = 0;
+function interacting(now) { return Object.keys(ptrs).length > 0 || now - lastWheel < 300; }
+
+function plot(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < BW && y < BH) px32[y * BW + x] = c; }
+function ring(cx, cy, r, c, density, seed) { // midpoint circle; density thins the ring as it fades, in a fixed ordered-dither pattern
+  r = Math.round(r); if (r < 1) { plot(cx, cy, c); return; }
+  var x = r, y = 0, err = 1 - r, k = 0;
+  var keep = density >= 1 ? 1 : density >= 0.5 ? 2 : density >= 0.25 ? 4 : 8;
+  while (x >= y) {
+    if ((k++ + seed) % keep === 0) {
+      plot(cx + x, cy + y, c); plot(cx - x, cy + y, c); plot(cx + x, cy - y, c); plot(cx - x, cy - y, c);
+      plot(cx + y, cy + x, c); plot(cx - y, cy + x, c); plot(cx + y, cy - x, c); plot(cx - y, cy - x, c);
+    }
+    y++; if (err < 0) err += 2 * y + 1; else { x--; err += 2 * (y - x) + 1; }
+  }
+}
+function drawRipples(cx, cy, q, age, rings, strength, life) {
+  var R = reach(q.mag) * view.z, col = C[magColor(q.mag)];
+  for (var i = 0; i < rings; i++) {
+    var t = age - i * 0.5; if (t < 0 || t > life) continue;
+    var f = t / life, r = R * (1 - Math.pow(1 - f, 2)), fade = (1 - f) * strength;
+    if (fade < 0.06) continue;
+    ring(cx, cy, r, fade > 0.55 ? col : fade > 0.3 ? C.ice : C.sky, fade * 2, i);
+    if (fade > 0.5 && r > 3) ring(cx, cy, r - 1, C.sky, fade, i + 1);
+  }
+}
+
+/* ================= the static map, baked into a pixel layer whenever the view or the data changes ================= */
+var rc = document.createElement("canvas"), rx = rc.getContext("2d", { willReadFrequently: true });
+var base = null, mask = null, glint = [], bakeKey = "", bakeVer = -1;
+function shiftsFor(bb) { var out = []; for (var s = -360; s <= 360; s += 360) if (bb[0] + s <= P.r && bb[2] + s >= P.l && bb[1] <= P.t && bb[3] >= P.b) out.push(s); return out; }
+function fillPolys(list, color) {
+  rx.fillStyle = color;
+  list.forEach(function (p) {
+    shiftsFor(p.bb).forEach(function (s) {
+      if ((p.bb[2] - p.bb[0]) * P.zx < 0.4 && (p.bb[3] - p.bb[1]) * P.zy < 0.4) return;
+      rx.setTransform(P.zx, 0, 0, -P.zy, BW / 2 - (view.lon - s) * P.zx, BH / 2 + view.lat * P.zy);
+      rx.beginPath();
+      p.rings.forEach(function (r) { rx.moveTo(r[0], r[1]); for (var i = 2; i < r.length; i += 2) rx.lineTo(r[i], r[i + 1]); rx.closePath(); });
+      rx.fill("evenodd");
+    });
+  });
+  rx.setTransform(1, 0, 0, 1, 0, 0);
+}
+// line styles: color, dash pattern (on/off pixels), land only, thick
+var STY = {
+  river: { c: C.blue, land: true }, state: { c: C.leaf, on: 1, off: 1, land: true }, country: { c: C.red, on: 2, off: 1, land: true },
+  minor: { c: C.olive }, tertiary: { c: C.sand }, secondary: { c: C.sand }, primary: { c: C.ash }, trunk: { c: C.orange }, motorway: { c: C.gold }
+};
+function put(x, y, sty) {
+  if (x < 0 || y < 0 || x >= BW || y >= BH) return;
+  var k = y * BW + x; if (sty.land && !mask[k]) return;
+  base[k] = sty.c;
+  if (sty.w) { if (x + 1 < BW) base[k + 1] = sty.c; if (y + 1 < BH) base[k + BW] = sty.c; }
+}
+var CL = [0, 0, 0, 0];
+function clipSeg(x0, y0, x1, y1) { // Liang-Barsky against the buffer with a small margin
+  var t0 = 0, t1 = 1, dx = x1 - x0, dy = y1 - y0, p = [-dx, dx, -dy, dy], q = [x0 + 2, BW + 1 - x0, y0 + 2, BH + 1 - y0];
+  for (var i = 0; i < 4; i++) {
+    if (p[i] === 0) { if (q[i] < 0) return null; }
+    else { var r = q[i] / p[i]; if (p[i] < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; } }
+  }
+  CL[0] = Math.round(x0 + t0 * dx); CL[1] = Math.round(y0 + t0 * dy); CL[2] = Math.round(x0 + t1 * dx); CL[3] = Math.round(y0 + t1 * dy); return CL;
+}
+function seg(x0, y0, x1, y1, sty, st) {
+  var c = clipSeg(x0, y0, x1, y1); if (!c) return;
+  var ax = c[0], ay = c[1], bx = c[2], by = c[3], dx = Math.abs(bx - ax), sx = ax < bx ? 1 : -1, dy = -Math.abs(by - ay), sy = ay < by ? 1 : -1, err = dx + dy, first = true;
+  for (;;) {
+    if (!(first && st.joined)) { st.n++; if (!sty.on || st.n % (sty.on + sty.off) < sty.on) put(ax, ay, sty); }
+    first = false;
+    if (ax === bx && ay === by) break;
+    var e2 = 2 * err; if (e2 >= dy) { err += dy; ax += sx; } if (e2 <= dx) { err += dx; ay += sy; }
+  }
+  st.joined = true;
+}
+function drawLine(L, sty) {
+  shiftsFor(L.bb).forEach(function (s) {
+    var p = L.pts, st = { n: 0, joined: false }, off = s - view.lon;
+    var x0 = Math.round(BW / 2 + (p[0] + off) * P.zx), y0 = Math.round(BH / 2 - (p[1] - view.lat) * P.zy);
+    for (var i = 2; i < p.length; i += 2) {
+      var x1 = Math.round(BW / 2 + (p[i] + off) * P.zx), y1 = Math.round(BH / 2 - (p[i + 1] - view.lat) * P.zy);
+      if (x1 === x0 && y1 === y0) continue;
+      if (!((x0 < -2 && x1 < -2) || (x0 > BW + 1 && x1 > BW + 1) || (y0 < -2 && y1 < -2) || (y0 > BH + 1 && y1 > BH + 1))) seg(x0, y0, x1, y1, sty, st);
+      else st.joined = false;
+      x0 = x1; y0 = y1;
+    }
+  });
+}
+function bake(now) {
+  if (rc.width !== BW || rc.height !== BH) { rc.width = BW; rc.height = BH; }
+  if (!base || base.length !== BW * BH) { base = new Uint32Array(BW * BH); mask = new Uint8Array(BW * BH); }
+  var z = view.z, busy = interacting(now);
+  if (z >= 40) loadLand10();
+  if (z >= 12) loadPlaces10();
+
+  // land and lakes rasterized at this exact view, then classified pixel by pixel
+  rx.setTransform(1, 0, 0, 1, 0, 0); rx.fillStyle = "#000"; rx.fillRect(0, 0, BW, BH);
+  var land = (z >= 40 && MAP.land10) || (z >= 3 && MAP.land50) || MAP.land110 || MAP.land50;
+  fillPolys(land, "#fff"); if (MAP.lakes) fillPolys(MAP.lakes, "#000");
+  var d = rx.getImageData(0, 0, BW, BH).data, x, y, k;
+  for (k = 0; k < mask.length; k++) mask[k] = d[k * 4] > 127 ? 1 : 0;
+  var ox = Math.floor(P.l * P.zx), oy = Math.floor(P.t * P.zy); glint = [];
+  for (y = 0, k = 0; y < BH; y++) {
+    var la = P.t - (y + 0.5) / P.zy, off = la > 90 || la < -90, wy = oy - y;
+    for (x = 0; x < BW; x++, k++) {
+      if (off) { base[k] = C.black; continue; }
+      var wx = x + ox;
+      if (mask[k]) {
+        var coast = (x > 0 && !mask[k - 1]) || (x < BW - 1 && !mask[k + 1]) || (y > 0 && !mask[k - BW]) || (y < BH - 1 && !mask[k + BW]);
+        base[k] = coast ? C.lime : (((wx + wy) & 1) && hash2(wx, wy) > 0.55 ? C.green : C.forest);
+      } else {
+        var h = hash2(wx, wy);
+        base[k] = ((wx + wy) & 1) && h > 0.8 ? C.deep : C.navy;
+        if (h > 0.997) glint.push(k, wx, wy);
+      }
+    }
+  }
+  // graticule every 30 degrees, dotted, water only
+  for (var g = -180; g < 180; g += 30) { var s = toScr(0, g); if (s[0] >= 0 && s[0] < BW) for (y = 0; y < BH; y += 4) { k = y * BW + Math.round(s[0]); if (base[k] === C.navy) base[k] = C.deep; } }
+  for (var la2 = -60; la2 <= 60; la2 += 30) { var s2 = toScr(la2, view.lon); if (s2[1] >= 0 && s2[1] < BH) for (x = 0; x < BW; x += 4) { k = Math.round(s2[1]) * BW + x; if (base[k] === C.navy) base[k] = C.deep; } }
+
+  // rivers, borders, roads
+  var osm = [[], [], []];
+  for (var ti = 0; ti < TIERS.length; ti++) if (!(ti === 2 && busy)) osm[ti] = osmVisible(ti);
+  var maxRank = z < 2 ? 2 : z < 5 ? 4 : 6;
+  if (z < 150) MAP.rivers.forEach(function (L) { if (L.rank <= maxRank) drawLine(L, STY.river); });
+  osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === "river") drawLine(L, STY.river); }); }); });
+  if (z >= 3.5) MAP.states.forEach(function (L) { drawLine(L, STY.state); });
+  STY.country.c = z < 4 ? C.crimson : C.red;
+  MAP.countries.forEach(function (L) { drawLine(L, STY.country); });
+  STY.motorway.w = z >= 250;
+  ["minor", "tertiary", "secondary", "primary", "trunk", "motorway"].forEach(function (kind) {
+    osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[kind]); }); }); });
+  });
+
+  layoutPlaces(osm);
+}
+
+/* ================= towns and cities: building icons and labels, biggest first, nothing overlapping ================= */
+function iconFor(p) {
+  if (p.kind === "area") return null;
+  if (p.kind === "hamlet") return SPR.hut;
+  return p.cap ? SPR.castle : p.pop >= 1e6 ? SPR.sky : p.pop >= 1.5e5 ? SPR.city : p.pop >= 8e3 ? SPR.house : SPR.hut;
+}
+function layoutPlaces(osm) {
+  var list = [], src = view.z >= 12 && MAP.places10 ? MAP.places10 : MAP.places50;
+  (src || []).forEach(function (p) { if (view.z >= p.mz) list.push(p); });
+  osm.forEach(function (cells) { cells.forEach(function (c) { c.places.forEach(function (p) { list.push(p); }); }); });
+  list.sort(function (a, c) { return c.score - a.score; });
+  var boxes = [], seen = {};
+  function hits(bx) {
+    if (bx[0] < 1 || bx[1] < 1 || bx[0] + bx[2] > BW - 1 || bx[1] + bx[3] > BH - 15) return true;
+    for (var i = 0; i < boxes.length; i++) { var o = boxes[i]; if (bx[0] < o[0] + o[2] && o[0] < bx[0] + bx[2] && bx[1] < o[1] + o[3] && o[1] < bx[1] + bx[3]) return true; }
+    return false;
+  }
+  // pass one: icons, most important first; pass two: labels wherever they fit around the icons
+  var placed = [];
+  for (var i = 0; i < list.length && placed.length < 90; i++) {
+    var p = list[i], s = toScr(p.lat, p.lon), x = Math.round(s[0]), y = Math.round(s[1]);
+    if (x < 0 || y < 0 || x >= BW || y >= BH) continue;
+    var key = p.name + ":" + Math.round(p.lat * 3) + ":" + Math.round(p.lon * 3); if (seen[key]) continue;
+    var spr = iconFor(p);
+    if (spr) { var ib = [x - (spr.w >> 1) - 1, y - (spr.h >> 1) - 1, spr.w + 2, spr.h + 2]; if (hits(ib)) continue; boxes.push(ib); }
+    seen[key] = 1; placed.push([p, x, y, spr]);
+  }
+  placed.forEach(function (it) {
+    var p = it[0], x = it[1], y = it[2], spr = it[3], lw = textW(p.name) + 2, lb = null, hw = spr ? (spr.w >> 1) + 2 : 0;
+    var opts = spr ? [[x + hw, y - 3], [x - hw - lw, y - 3], [x - (lw >> 1), y + (spr.h >> 1) + 2], [x - (lw >> 1), y - (spr.h >> 1) - 9]] : [[x - (lw >> 1), y - 3]];
+    for (var o = 0; o < opts.length; o++) { var bx = [opts[o][0], opts[o][1], lw, 7]; if (!hits(bx)) { lb = bx; break; } }
+    if (spr) blit(base, spr, x - (spr.w >> 1), y - (spr.h >> 1));
+    if (lb) { boxes.push(lb); ptext(base, p.name, lb[0] + 1, lb[1] + 1, p.cap ? C.gold : p.kind === "area" || p.kind === "hamlet" || p.kind === "village" ? C.ash : C.white); }
+  });
+}
+
+/* ================= frame ================= */
+function draw(now) {
+  var wall = Date.now(), simNow = wall;
+  if (mode === "replay") { var f = ((now - replay0) / 1000 % REPLAY_S) / REPLAY_S; simNow = wall - 24 * 3600e3 * (1 - f); }
+  shakeOff = now < shakeUntil ? Math.round((Math.random() - 0.5) * 3) : 0;
+  proj();
+  var busy = interacting(now), key = [view.lon.toFixed(6), view.lat.toFixed(6), view.z.toFixed(5), BW, BH].join(",");
+  if (key !== bakeKey || MAP.ver !== bakeVer || busy !== bake.busy) { if (key !== bakeKey) viewMovedAt = now; bakeKey = key; bakeVer = MAP.ver; bake.busy = busy; bake(now); }
+  px32.set(base);
+  var gt = Math.floor(now / 350);
+  for (var gi = 0; gi < glint.length; gi += 3) if (hash2(glint[gi + 1] + gt, glint[gi + 2]) > 0.6) px32[glint[gi]] = C.sky;
+
+  // dots: every quake today, brighter when recent; tiny ones fade first
+  TAPS = []; var list = [];
+  quakes.forEach(function (q) { if (q.time <= simNow) list.push(q); });
+  list.sort(function (a, c) { return a.mag - c.mag; });
+  list.forEach(function (q) {
+    var s3 = toScr(q.lat, q.lon); if (s3[0] < -40 || s3[0] > BW + 40 || s3[1] < -40 || s3[1] > BH + 40) return;
+    var age = (simNow - q.time) / 1000, sx = Math.round(s3[0]), sy = Math.round(s3[1]);
+    if (mode === "live" && age < 3600) {
+      drawRipples(sx, sy, q, age % 9, Math.max(1, Math.round(q.mag)), 0.45 + 0.55 * (1 - age / 3600), 5);
+    } else if (mode === "replay") {
+      var ra = age / (24 * 3600 / REPLAY_S);
+      if (ra < 6) drawRipples(sx, sy, q, ra, Math.max(2, Math.round(q.mag * 1.3)), 1, 4.5);
+    }
+    var sz = q.mag >= 6 ? 4 : q.mag >= 4.5 ? 3 : q.mag >= 2.5 ? 2 : 1;
+    var col = age < 3600 ? C[magColor(q.mag)] : age < 6 * 3600 ? (q.mag >= 4 ? C[magColor(q.mag)] : C.ash) : (q.mag >= 4.5 ? C.gold : C.grey);
+    if (age < 600 && Math.floor(now / 250) % 2) col = C.white;
+    for (var a = -1; a <= sz; a++) for (var c2 = -1; c2 <= sz; c2++) plot(sx - (sz >> 1) + a, sy - (sz >> 1) + c2, C.black);
+    for (var a2 = 0; a2 < sz; a2++) for (var c3 = 0; c3 < sz; c3++) plot(sx - (sz >> 1) + a2, sy - (sz >> 1) + c3, col);
+    TAPS.push([sx, sy, q.id]);
+  });
+
+  // fresh drops: the big splash
+  splashes = splashes.filter(function (sp) {
+    var age = (now - sp.t0) / 1000; if (age > sp.rings * 0.5 + 7) return false;
+    var s4 = toScr(sp.q.lat, sp.q.lon);
+    if (age < 0.4) { var r0 = Math.round(age * 10); for (var d = -r0; d <= r0; d++) { plot(s4[0] + d, s4[1], C.white); plot(s4[0], s4[1] + d, C.white); } }
+    drawRipples(Math.round(s4[0]), Math.round(s4[1]), sp.q, age, sp.rings, 1, 7);
+    return true;
+  });
+
+  // your spot
+  var hs = toScr(cfg.lat, cfg.lon), hx = Math.round(hs[0]), hy = Math.round(hs[1]);
+  plot(hx, hy - 2, C.pink); plot(hx, hy + 2, C.pink); plot(hx - 2, hy, C.pink); plot(hx + 2, hy, C.pink);
+
+  // selected quake: blinking brackets
+  var q0 = sel ? quakes.get(sel) : null;
+  if (q0) {
+    var s5 = toScr(q0.lat, q0.lon), on = Math.floor(now / 300) % 2 ? C.white : C.gold, r = 5, cx = Math.round(s5[0]), cy = Math.round(s5[1]);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (cc) { for (var t = 0; t < 3; t++) { plot(cx + cc[0] * r - cc[0] * t, cy + cc[1] * r, on); plot(cx + cc[0] * r, cy + cc[1] * r - cc[1] * t, on); } });
+  }
+  if (osmBusy && Math.floor(now / 400) % 2) ptext(px32, "LOADING MAP", 3, BH - 22, C.ice);
+  b.putImageData(img, 0, 0);
+  hud(now, simNow);
+}
+
+/* ================= HUD ================= */
+function text(s, x, y, col, align) {
+  b.font = "8px 'Press Start 2P', monospace"; b.textBaseline = "top";
+  var w = b.measureText(s).width; if (align === "right") x -= w; else if (align === "center") x -= w / 2;
+  b.fillStyle = NES.black; b.fillText(s, Math.round(x) + 1, Math.round(y) + 1);
+  b.fillStyle = col; b.fillText(s, Math.round(x), Math.round(y));
+  return w;
+}
+function frameBox(x, y, w, h) { b.fillStyle = NES.black; b.fillRect(x, y, w, h); b.fillStyle = NES.white; b.fillRect(x, y, w, 1); b.fillRect(x, y + h - 1, w, 1); b.fillRect(x, y, 1, h); b.fillRect(x + w - 1, y, 1, h); }
+var tickX = 0, tickText = "";
+function hud(now, simNow) {
+  var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : 3;
+  var n = 0, big = null; quakes.forEach(function (q) { if (q.time <= simNow && simNow - q.time < 24 * 3600e3) { n++; if (!big || q.mag > big.mag) big = q; } });
+  var l1 = mode === "replay" ? "REPLAY " + clockStr(simNow) : demo ? "DEMO POND" : "QUAKE POND", l2 = n + " TODAY";
+  var l3 = big ? "TOP M" + big.mag.toFixed(1) : "";
+  b.font = "8px 'Press Start 2P', monospace";
+  var w = Math.min(BW - 6, Math.max(b.measureText(l1).width, b.measureText(l2).width, b.measureText(l3).width) + 8);
+  frameBox(3, hy, w, l3 ? 33 : 23);
+  text(l1, 7, hy + 4, mode === "replay" ? NES.gold : demo ? NES.orange : NES.white);
+  text(l2, 7, hy + 14, NES.ice);
+  if (l3) text(l3, 7, hy + 24, NES[magColor(big.mag)]);
+
+  var q = latest, msg = q ? "LATEST  M" + q.mag.toFixed(1) + "  " + q.place.toUpperCase() + "  " + ago(q.time) + "     " : (live ? "WAITING FOR THE FIRST QUAKE     " : "LISTENING TO USGS...     ");
+  if (msg !== tickText) { tickText = msg; }
+  var ty = BH - 12; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
+  var tw = b.measureText(tickText).width; tickX = (tickX + 0.5) % tw;
+  for (var x = -tickX; x < BW; x += tw) text(tickText, x, ty + 1, q ? NES[magColor(q.mag)] : NES.ice);
+}
+function ago(t) { var s = Math.max(0, (Date.now() - t) / 1000); return s < 90 ? Math.round(s) + "S AGO" : s < 5400 ? Math.round(s / 60) + "M AGO" : Math.round(s / 3600) + "H AGO"; }
+function clockStr(t) { return new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(" ", ""); }
+
+/* ================= card ================= */
+var $ = function (id) { return document.getElementById(id); };
+function select(id) {
+  var q = quakes.get(id); if (!q) return; sel = id;
+  $("cMag").textContent = "M" + q.mag.toFixed(1); $("cMag").style.background = NES[magColor(q.mag)];
+  $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
+  $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
+  $("sDepth").textContent = Math.round(q.depth) + " KM / " + Math.round(q.depth * 0.621) + " MI";
+  $("sFelt").textContent = q.tsunami ? "TSUNAMI FLAG" : q.felt ? q.felt + " PEOPLE" : "NO REPORTS";
+  var dy = (q.lat - cfg.lat) * 69, dx = (q.lon - cfg.lon) * 69 * Math.cos(cfg.lat * DEG), d = Math.hypot(dx, dy);
+  $("sDist").textContent = (d > 3000 ? "FAR AWAY" : Math.round(d).toLocaleString("en-US") + " MI");
+  $("cLink").href = q.url; $("cLink").hidden = !!q.demo;
+  $("card").hidden = false;
+  var bottom = !(innerWidth > innerHeight && innerHeight <= 520);
+  document.documentElement.style.setProperty("--cardh", bottom ? ($("card").offsetHeight + 8) + "px" : "0px");
+}
+function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); }
+function openList() {
+  var arr = []; quakes.forEach(function (q) { arr.push(q); });
+  arr.sort(function (a, c) { return c.mag - a.mag; });
+  $("listNote").textContent = demo ? "USGS IS NOT ANSWERING, SO THESE ARE DEMO QUAKES." : arr.length + " QUAKES IN THE LAST 24 HOURS. TAP ONE TO DROP IT AGAIN.";
+  var box = $("quakes"); box.innerHTML = "";
+  arr.slice(0, 40).forEach(function (q) {
+    var bt = document.createElement("button"), m = document.createElement("b"), p = document.createElement("span"), t = document.createElement("em");
+    m.textContent = "M" + q.mag.toFixed(1); m.style.color = NES[magColor(q.mag)];
+    p.textContent = q.place.toUpperCase(); t.textContent = ago(q.time);
+    bt.appendChild(m); bt.appendChild(p); bt.appendChild(t);
+    bt.addEventListener("click", function () { $("listSheet").hidden = true; flyTo(q); select(q.id); splash(q, false); });
+    box.appendChild(bt);
+  });
+  $("listSheet").hidden = false;
+}
+function flyTo(q) { view.lon = q.lon; view.lat = q.lat; view.z = Math.min(ZMAX, Math.max(view.z, Math.max(BW, BH) / (reach(q.mag) * 5))); normLon(); }
+
+/* ================= controls ================= */
+function sync() {
+  $("bMode").textContent = mode === "live" ? "LIVE" : "24H";
+  $("bMode").classList.toggle("on", mode === "replay");
+  $("bSound").classList.toggle("on", sound);
+}
+$("bMode").addEventListener("click", function () { mode = mode === "live" ? "replay" : "live"; replay0 = performance.now(); sync(); });
+$("bSound").addEventListener("click", function () {
+  sound = !sound;
+  if (sound && !audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { sound = false; } }
+  if (audio && audio.state === "suspended") audio.resume();
+  sync(); if (sound) blip(3);
+});
+$("bList").addEventListener("click", openList);
+$("bListClose").addEventListener("click", function () { $("listSheet").hidden = true; });
+$("bWorld").addEventListener("click", function () { var us = $("bWorld").textContent === "USA"; if (us) usView(); else worldView(); $("bWorld").textContent = us ? "WORLD" : "USA"; });
+$("bIn").addEventListener("click", function () { zoomBy(1.6); });
+$("bOut").addEventListener("click", function () { zoomBy(1 / 1.6); });
+$("cClose").addEventListener("click", deselect);
+$("cDrop").addEventListener("click", function () { var q = sel && quakes.get(sel); if (q) { splash(q, false); blip(q.mag); } });
+function zoomBy(f, ax, ay) {
+  var z0 = view.z, z1 = clamp(view.z * f, Math.min(BW / 360, BH / 170) * 0.9, ZMAX); if (z1 === z0) return;
+  if (ax != null) {
+    var zx0 = z0 * kxFor(z0, view.lat), zx1 = z1 * kxFor(z1, view.lat);
+    view.lon += (ax - BW / 2) * (1 / zx0 - 1 / zx1); view.lat -= (ay - BH / 2) * (1 / z0 - 1 / z1);
+  }
+  view.z = z1; view.lat = clamp(view.lat, -82, 82); normLon();
+}
+var dragFrom = null, moved = 0, pinch0 = 0, zoom0 = 1;
+cv.addEventListener("pointerdown", function (e) {
+  cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = [e.clientX, e.clientY];
+  var ids = Object.keys(ptrs); if (ids.length === 2) { var a = ptrs[ids[0]], c = ptrs[ids[1]]; pinch0 = Math.hypot(a[0] - c[0], a[1] - c[1]); zoom0 = view.z; }
+  dragFrom = [e.clientX, e.clientY]; moved = 0;
+});
+cv.addEventListener("pointermove", function (e) {
+  if (!ptrs[e.pointerId]) return; ptrs[e.pointerId] = [e.clientX, e.clientY];
+  var ids = Object.keys(ptrs);
+  if (ids.length === 2 && pinch0) { var a = ptrs[ids[0]], c = ptrs[ids[1]]; zoomBy(zoom0 * Math.hypot(a[0] - c[0], a[1] - c[1]) / pinch0 / view.z, (a[0] + c[0]) / 2 / SCALE, (a[1] + c[1]) / 2 / SCALE); moved = 99; return; }
+  var dx = e.clientX - dragFrom[0], dy = e.clientY - dragFrom[1]; dragFrom = [e.clientX, e.clientY]; moved += Math.abs(dx) + Math.abs(dy);
+  if (moved < 6) return;
+  view.lon -= dx / SCALE / (view.z * kxFor(view.z, view.lat)); view.lat = clamp(view.lat + dy / SCALE / view.z, -82, 82); normLon();
+});
+function endPtr(e) {
+  if (!ptrs[e.pointerId]) return; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length) return;
+  if (moved < 6) {
+    var x = e.clientX / SCALE, y = e.clientY / SCALE, best = null, bd = 9;
+    TAPS.forEach(function (t) { var d = Math.hypot(t[0] - x, t[1] - y); if (d < bd) { bd = d; best = t[2]; } });
+    if (best) { select(best); var q = quakes.get(best); if (q) splash(q, false); } else deselect();
+  }
+  pinch0 = 0;
+}
+cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", endPtr);
+cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = performance.now(); zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX / SCALE, e.clientY / SCALE); }, { passive: false });
+addEventListener("keydown", function (e) {
+  if (e.key === "Escape") { deselect(); $("listSheet").hidden = true; } if (e.key === "l") openList(); if (e.key === "r") $("bMode").click(); if (e.key === "s") $("bSound").click();
+  if (e.key === "+" || e.key === "=") zoomBy(1.5); if (e.key === "-") zoomBy(1 / 1.5);
+});
+
+/* ================= loop and boot ================= */
+var lastPoll = 0;
+function frame(now) {
+  if (MAP.land110 || MAP.land50) {
+    draw(now);
+    var sx = cv.width / innerWidth, o = shakeOff * SCALE * sx;
+    ctx.imageSmoothingEnabled = false;
+    if (o) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height); }
+    ctx.drawImage(buf, o, o, BW * SCALE * sx, BH * SCALE * (cv.height / innerHeight));
+    osmTick(now);
+  }
+  if (now - lastPoll > 10000) { lastPoll = now; poll(); }
+  stepDemo(now);
+  if (sel && (frame.n = (frame.n || 0) + 1) % 60 === 0) { var q = quakes.get(sel); if (q) $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time); }
+  requestAnimationFrame(frame);
+}
+resize(); addEventListener("resize", resize); sync();
+if (new URLSearchParams(location.search).get("demo") === "1") { live = false; startDemo(); }
+var fontsReady = document.fonts && document.fonts.load ? document.fonts.load("8px 'Press Start 2P'").catch(function () {}) : Promise.resolve();
+Promise.all([fetchData(WA + "land-110m.json"), fontsReady]).then(function (res) {
+  MAP.land110 = polysFrom(topojson.feature(res[0], res[0].objects.land)); $("loading").hidden = true; bump(); loadExtras();
+}).catch(function () { $("loading").textContent = "THE MAP DID NOT LOAD. RELOAD TO TRY AGAIN."; });
+poll();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
