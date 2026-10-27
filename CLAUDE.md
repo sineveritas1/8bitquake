@@ -10,7 +10,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 
 - Single HTML file, no build step, no Worker, no D1, KV or R2. Nothing to store.
 - NES palette only (the `NES` object). All drawing goes into a small buffer (`SHORT = 150` pixels on the short side) and is scaled up with `image-rendering: pixelated`.
-- Map data: Natural Earth (world-atlas TopoJSON plus Natural Earth GeoJSON) when zoomed out, OpenStreetMap via Overpass when zoomed in, in three zoom tiers (`TIERS`).
+- Map data: Natural Earth (world-atlas TopoJSON plus Natural Earth GeoJSON) when zoomed out. Big roads are static tiles in `data/roads/` (Natural Earth 1:10m roads, built by `tools/build-roads.js`), so they never depend on Overpass. OpenStreetMap via Overpass adds towns, close-up roads and streets in three zoom tiers (`TIERS`); its roads replace ours only once every visible cell has loaded.
 - Overpass is a shared public service. Keep queries per cell, only after the view settles, one at a time, with backoff and server rotation. Do not make it chattier.
 - USGS polling: `all_day` every 5 minutes, `all_hour` every 60 seconds. USGS does not update faster.
 - Demo quakes only when USGS fails, always labeled DEMO.

@@ -333,11 +333,36 @@ function lazy(name, fn) { if (want[name]) return; want[name] = true; fn().then(b
 function loadLand10() { lazy("land10", function () { return fetchData(WA + "land-10m.json").then(function (t) { MAP.land10 = polysFrom(topojson.feature(t, t.objects.land)); }); }); }
 function loadPlaces10() { lazy("places10", function () { return fetchAny(neUrls("ne_10m_populated_places_simple")).then(function (j) { MAP.places10 = nePlaces(j); }); }); }
 
-/* OpenStreetMap through Overpass, fetched one grid cell at a time once the view settles.
-   Three tiers: highways and towns, then main roads, rivers and villages, then town streets. */
+/* Big roads from our own files: data/roads/ is Natural Earth's 1:10m roads (public domain), cut into 10 degree tiles
+   by tools/build-roads.js. A tile loads the first time the view needs it. Kinds: 0 major highway, 1 secondary, 2 road. */
+var NE_ROAD_Z = [14, 30, 55], NE_ROAD_STY = ["motorway", "trunk", "primary"], neRoadIndex = null, neRoadTiles = new Map();
+function neRoadsVisible() {
+  var out = []; if (!layers.roads || view.z < NE_ROAD_Z[0]) return out;
+  if (!neRoadIndex) { lazy("roadIndex", function () { return fetchData("data/roads/index.json").then(function (j) { neRoadIndex = { tile: j.tile, q: j.q, has: new Set(j.tiles) }; }); }); return out; }
+  var T = neRoadIndex.tile, j0 = Math.floor((Math.max(P.b, -90) + 90) / T), j1 = Math.floor((Math.min(P.t, 89.99) + 90) / T);
+  for (var i = Math.floor((P.l + 180) / T); i <= Math.floor((P.r + 180) / T); i++) for (var j = j0; j <= j1; j++) {
+    var key = (((i % 36) + 36) % 36) + "_" + j, t = neRoadTiles.get(key);
+    if (t === undefined && neRoadIndex.has.has(key)) { neRoadTiles.set(key, "loading"); loadRoadTile(key); }
+    else if (t && t !== "loading") out.push(t);
+  }
+  return out;
+}
+function loadRoadTile(key) {
+  fetchData("data/roads/" + key + ".json").then(function (j) {
+    var q = neRoadIndex.q, lines = j.lines.map(function (a) {
+      var pts = new Float64Array(a.length - 1), x = a[1], y = a[2]; pts[0] = x / q; pts[1] = y / q;
+      for (var n = 3, m = 2; n < a.length; n += 2, m += 2) { x += a[n]; y += a[n + 1]; pts[m] = x / q; pts[m + 1] = y / q; }
+      return { pts: pts, bb: bbOf([pts]), kind: a[0] };
+    });
+    neRoadTiles.set(key, lines); bump();
+  }).catch(function () { neRoadTiles.delete(key); });
+}
+
+/* Extra detail from OpenStreetMap through Overpass, fetched one grid cell at a time once the view settles.
+   Three tiers: towns, then all main roads, rivers and villages up close, then town streets. */
 var TIERS = [
-  { z: 55, cell: 2, q: 'way["highway"~"^(motorway|trunk)$"]({b});node["place"~"^(city|town)$"]({b});' },
-  { z: 150, cell: 0.5, q: 'way["highway"~"^(primary|secondary)$"]({b});way["waterway"="river"]({b});node["place"="village"]({b});' },
+  { z: 55, cell: 2, q: 'node["place"~"^(city|town)$"]({b});' },
+  { z: 150, cell: 0.5, q: 'way["highway"~"^(motorway|trunk|primary|secondary)$"]({b});way["waterway"="river"]({b});node["place"="village"]({b});' },
   { z: 380, cell: 0.25, q: 'way["highway"~"^(tertiary|unclassified|residential)$"]({b});node["place"~"^(hamlet|suburb|neighbourhood)$"]({b});' }
 ];
 var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
@@ -642,6 +667,10 @@ function bake(now) {
     MAP.countries.forEach(function (L) { drawLine(L, STY.country); });
   }
   STY.motorway.w = z >= 250;
+  // our own big-road tiles, until OpenStreetMap's sharper roads have loaded for this whole view
+  var c1 = z >= TIERS[1].z ? visCells(1) : [], osmRoads = c1.length > 0 && c1.every(function (c) { var e = osmCells.get(c.key); return e && e.state === "ok"; });
+  if (!osmRoads) { var ne = neRoadsVisible(); [2, 1, 0].forEach(function (kind) { if (z < NE_ROAD_Z[kind]) return;
+    ne.forEach(function (lines) { lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[NE_ROAD_STY[kind]]); }); }); }); }
   if (layers.roads) ["minor", "tertiary", "secondary", "primary", "trunk", "motorway"].forEach(function (kind) {
     osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[kind]); }); }); });
   });
@@ -738,8 +767,8 @@ function draw(now) {
     var s5 = toScr(q0.lat, q0.lon), on = Math.floor(now / 300) % 2 ? C.white : C.gold, r = 5, cx = Math.round(s5[0]), cy = Math.round(s5[1]);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (cc) { for (var t = 0; t < 3; t++) { plot(cx + cc[0] * r - cc[0] * t, cy + cc[1] * r, on); plot(cx + cc[0] * r, cy + cc[1] * r - cc[1] * t, on); } });
   }
-  var roadMsg = now - osmFailAt < 8000 ? "ROAD SERVER BUSY. RETRYING" : osmBusy ? "LOADING ROADS" : "";
-  if (roadMsg && (roadMsg[0] === "R" || Math.floor(now / 400) % 2)) ptext(px32, roadMsg, 3, SAFE_T + 3, roadMsg[0] === "R" ? C.orange : C.ice);
+  var roadMsg = now - osmFailAt < 8000 ? "MAP SERVER BUSY. RETRYING" : osmBusy ? "LOADING DETAIL" : "";
+  if (roadMsg && (roadMsg[0] === "M" || Math.floor(now / 400) % 2)) ptext(px32, roadMsg, 3, SAFE_T + 3, roadMsg[0] === "M" ? C.orange : C.ice);
   b.putImageData(img, 0, 0);
   hud(now, simNow);
 }

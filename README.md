@@ -16,7 +16,8 @@ It pulls everything from public sources in the browser:
 | Quakes | USGS summary feeds `all_day` (every 5 min) and `all_hour` (every 60 s) |
 | Land and country borders | `world-atlas@2.0.2` on jsDelivr (TopoJSON) |
 | Lakes, rivers, state lines, cities | Natural Earth `v5.1.2` GeoJSON on jsDelivr, GitHub raw as fallback |
-| Roads, towns, villages (zoomed in) | OpenStreetMap through public Overpass servers, fetched per grid cell |
+| Big roads | `data/roads/` in this repo, built from Natural Earth 1:10m roads by `tools/build-roads.js` |
+| Towns, close-up roads, villages, streets | OpenStreetMap through public Overpass servers, fetched per grid cell |
 | Font | Press Start 2P from Google Fonts |
 
 If USGS does not answer twice in a row, it shows clearly labeled demo quakes along real fault zones. Add `?demo=1` to the URL to force demo mode.
@@ -38,7 +39,9 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 
 Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
 
-Roads and towns from OpenStreetMap appear once you zoom in to about 150 miles across (four taps of + from the USA view). Each grid cell is asked of the Overpass servers one at a time with a 45 second limit (Overpass may queue a request, then allows itself 25 seconds); if one server fails, the next is tried, and a busy message shows in the top left.
+Big roads come from our own files in `data/roads/`: Natural Earth's 1:10m world roads (public domain), cut into 10 degree tiles that load only when the view needs them (1.7 MB for the whole world; a tile is a few KB to 80 KB). Major highways show from about one zoom step past the USA view, secondary highways and main roads a little closer. To rebuild them from a new Natural Earth release, see the comment at the top of `tools/build-roads.js`.
+
+Extra detail comes from OpenStreetMap through the public Overpass servers: town names once you zoom in to about 150 miles across, then all main roads, rivers and villages, then streets. Each grid cell is asked one at a time with a 45 second limit; if one server fails, the next is tried, and a status message shows in the top left. If Overpass is down, the big roads still show.
 
 All distances and depths are in miles and feet. USGS place names like "283 km E of Levuka" are converted to miles.
 
