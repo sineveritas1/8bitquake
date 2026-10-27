@@ -4,7 +4,7 @@ Follow the global `~/.claude/CLAUDE.md`. This file adds what is specific here.
 
 ## What this is
 
-A single-file static site (`index.html`) that shows live USGS earthquakes as ripples on an 8-bit world map. Personal project, Cloudflare Pages project `8bitquake`, served at `8bitquake.pages.dev`.
+A single-file static site (`index.html`) that shows live USGS earthquakes as ripples on an 8-bit world map. Personal project, Cloudflare Pages project `8bitquake`, served at `8bitquake.com` (custom domain; `8bitquake.pages.dev` and `www.8bitquake.com` also serve it).
 
 ## Decided
 
@@ -32,7 +32,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 
 ## Search and sharing
 
-- Title is "8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art". Canonical, Open Graph, Twitter and JSON-LD live in the `<head>`. Canonical domain is `8bitquake.pages.dev` (also in `robots.txt` and `sitemap.xml`); update all three if a custom domain is added.
+- Title is "8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art". Canonical, Open Graph, Twitter and JSON-LD live in the `<head>`. Canonical domain is `https://8bitquake.com/` (in the `<head>`, `robots.txt` and `sitemap.xml`); keep all three in step.
 - All icons, the link preview and the About badge come from `tools/build-icons.js`. Do not hand-edit those PNGs; change the script and rerun it.
 - The ? button opens About (content, FAQ, credits, contact hello@neondeadhead.com, the pixel Neon Dead Head badge). Credits live there, not in the gear menu. The badge is a pixelated Grateful Dead "Steal Your Face", used as a fan homage at Zack's request.
 - Keep the page's visible FAQ in step with the FAQPage JSON-LD.
@@ -54,7 +54,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 
 ## Current step
 
-Live at `8bitquake.pages.dev` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
+Live at `8bitquake.com` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
 
 ## Commands
 

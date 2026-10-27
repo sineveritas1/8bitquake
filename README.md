@@ -2,7 +2,7 @@
 
 Every earthquake on Earth from the last 24 hours, live from the USGS feed, dropped like stones in an 8-bit pond. The map is drawn in NES colors at about 150 pixels on the short side and scaled up with hard edges: Natural Earth land, borders, rivers and cities when zoomed out, OpenStreetMap roads and towns when zoomed in. Personal project.
 
-- **Live URL:** https://8bitquake.pages.dev (once the Pages project is connected, see below)
+- **Live URL:** https://8bitquake.com (custom domain on the Cloudflare Pages project; https://8bitquake.pages.dev also serves it)
 - **Owner:** Zack Almaguer
 
 ## How it is built
@@ -52,7 +52,7 @@ Ripple timing lives in the `RIPPLE` object near the top of the script, with a co
 
 ## Search, sharing and icons
 
-- Page title, description, canonical URL, Open Graph and Twitter tags, and schema.org data (WebSite, WebApplication, FAQPage) are in the `<head>` of `index.html`. The canonical URL is `https://8bitquake.pages.dev/`; if a custom domain is added, change it there, in `robots.txt` and in `sitemap.xml`.
+- Page title, description, canonical URL, Open Graph and Twitter tags, and schema.org data (WebSite, WebApplication, FAQPage) are in the `<head>` of `index.html`. The canonical URL is `https://8bitquake.com/` (also in `robots.txt` and `sitemap.xml`), so search engines treat 8bitquake.com as the real address even though www.8bitquake.com and 8bitquake.pages.dev serve the same page.
 - `favicon.ico`, `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `og-image.png` (link preview) and `img/made-by-8bit.png` (the About badge) are all built by `node tools/build-icons.js`. The icon is a pixel quake ripple: two rings around a red triangle.
 - `manifest.webmanifest` makes it installable to a phone home screen. `robots.txt` and `sitemap.xml` are for search engines. `_headers` sets caching and content types on Cloudflare Pages.
 - The ? button opens About: what it is, how it works, questions, credits, and contact (hello@neondeadhead.com).
