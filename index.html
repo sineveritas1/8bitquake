@@ -47,7 +47,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #cPlace { font-size: 10px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .stats div { border: 2px solid var(--grey); padding: 6px; min-width: 0; }
-.stats i { display: block; font-style: normal; font-size: 7px; color: var(--ice); margin-bottom: 5px; }
+.stats i { display: block; font-style: normal; font-size: 7px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
 .stats span { font-size: 9px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
 .feel { border: 2px solid var(--grey); padding: 6px; margin-bottom: 10px; }
 .feel i { display: block; font-style: normal; font-size: 7px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
@@ -120,8 +120,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <div class="stats">
     <div><i>WHEN</i><span id="sWhen"></span></div>
     <div><i>DEPTH</i><span id="sDepth"></span></div>
-    <div><i>FELT BY</i><span id="sFelt"></span></div>
-    <div><i>FROM YOU</i><span id="sDist"></span></div>
+    <div><i>MILES FROM YOU</i><span id="sDist"></span></div>
   </div>
   <div class="feel"><i id="fLabel">WHAT IT FEELS LIKE</i><span id="fText"></span></div>
   <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
@@ -762,10 +761,9 @@ function select(id) {
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
   $("sDepth").textContent = depthStr(q.depth);
-  $("sFelt").textContent = q.tsunami ? "TSUNAMI FLAG" : q.felt ? q.felt + " PEOPLE" : "NO REPORTS";
-  var dy = (q.lat - cfg.lat) * 69, dx = (q.lon - cfg.lon) * 69 * Math.cos(cfg.lat * DEG), d = Math.hypot(dx, dy);
-  $("sDist").textContent = (d > 3000 ? "FAR AWAY" : Math.round(d).toLocaleString("en-US") + " MI");
-  var f = feelFor(q); $("fLabel").textContent = f[0]; $("fText").textContent = f[1];
+  $("sDist").textContent = Math.round(milesBetween(cfg.lat, cfg.lon, q.lat, q.lon)).toLocaleString("en-US");
+  var f = feelFor(q); $("fLabel").textContent = f[0];
+  $("fText").textContent = f[1] + (q.tsunami ? " USGS FLAGGED THIS ONE FOR TSUNAMI REVIEW. THAT IS NOT A WARNING; CHECK TSUNAMI.GOV." : "");
   $("cLink").href = q.url; $("cLink").hidden = !!q.demo;
   $("card").hidden = false;
   var bottom = !(innerWidth > innerHeight && innerHeight <= 520);
@@ -793,6 +791,11 @@ function feelFor(q) {
     : m < 7 ? "VERY STRONG NEAR THE CENTER. DAMAGE LIKELY CLOSE IN, FELT HUNDREDS OF MILES AWAY."
     : "MAJOR. SERIOUS DAMAGE POSSIBLE OVER A LARGE AREA.";
   return ["FEELS LIKE, NEAR THE CENTER (ROUGH GUIDE)", t + deep];
+}
+// straight-line distance over the curve of the Earth (haversine), in miles; Earth radius 3,958.8 mi
+function milesBetween(la1, lo1, la2, lo2) {
+  var a = Math.pow(Math.sin((la2 - la1) * DEG / 2), 2) + Math.cos(la1 * DEG) * Math.cos(la2 * DEG) * Math.pow(Math.sin((lo2 - lo1) * DEG / 2), 2);
+  return 2 * 3958.8 * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 function deselect() { sel = null; $("card").hidden = true; document.documentElement.style.setProperty("--cardh", "0px"); }
 function openList() {
