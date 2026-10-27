@@ -6,14 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#000000" />
-<title>Quake Pond</title>
+<title>8bit Quake</title>
 <meta name="description" content="Every earthquake on Earth, live from USGS, dropped like stones in an 8-bit pond, on a pixel map of nations, states, rivers, roads and towns." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <style>
-/* QUAKE POND: live USGS earthquakes as ripples on an 8-bit world. Everything is drawn into a tiny buffer
+/* 8BIT QUAKE: live USGS earthquakes as ripples on an 8-bit world. Everything is drawn into a tiny buffer
    (150 pixels on the short side) using only colors from the NES palette, then scaled up with hard edges. */
 :root {
   --black: #000000; --navy: #24188c; --blue: #0058f8; --sky: #3cbcfc; --ice: #a4e4fc;
@@ -29,7 +29,7 @@ body { font-family: var(--px); color: var(--white); user-select: none; -webkit-u
 
 #top { position: fixed; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; z-index: 5; pointer-events: none; }
 #top button { pointer-events: auto; }
-button { font: 10px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
+button { font: 12px/1 var(--px); color: var(--white); background: var(--black); border: 3px solid var(--white); border-radius: 0; padding: 8px 8px; min-height: 44px; min-width: 44px; cursor: pointer; box-shadow: 3px 3px 0 var(--navy); }
 button:active, button.on { background: var(--white); color: var(--black); }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #zoom { position: fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px)); z-index: 5; display: grid; gap: 8px; }
@@ -38,51 +38,53 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #dock button { width: 48px; display: grid; place-items: center; }
 .icon svg { width: 24px; height: auto; display: block; }
 /* OpenStreetMap asks for visible credit wherever its data is on screen */
-#osm { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px) + 60px); z-index: 4; font-size: 6px; color: rgba(252, 252, 252, 0.7); pointer-events: none; text-shadow: 1px 1px 0 #000; }
+#osm { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px) + var(--cardh, 0px) + 60px); z-index: 4; font-size: 8px; color: rgba(252, 252, 252, 0.7); pointer-events: none; text-shadow: 1px 1px 0 #000; }
 
 #card { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--tick, 26px)); width: min(460px, calc(100% - 16px)); z-index: 6;
   background: var(--black); border: 4px solid var(--white); padding: 12px; box-shadow: 4px 4px 0 var(--navy); }
 .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-#cMag { font-size: 20px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
-#cPlace { font-size: 10px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#cMag { font-size: 24px; padding: 6px 8px; background: var(--white); color: var(--black); white-space: nowrap; }
+#cPlace { font-size: 12px; line-height: 1.6; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .stats div { border: 2px solid var(--grey); padding: 6px; min-width: 0; }
-.stats i { display: block; font-style: normal; font-size: 7px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
-.stats span { font-size: 9px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
+.stats i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
+.stats span { font-size: 11px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
 .feel { border: 2px solid var(--grey); padding: 6px; margin-bottom: 10px; }
-.feel i { display: block; font-style: normal; font-size: 7px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
-.feel span { font-size: 9px; line-height: 1.6; display: block; }
-#cLink { display: grid; place-items: center; font: 10px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
+.feel i { display: block; font-style: normal; font-size: 9px; line-height: 1.6; color: var(--ice); margin-bottom: 5px; }
+.feel span { font-size: 11px; line-height: 1.6; display: block; }
+#cLink { display: grid; place-items: center; font: 12px/1 var(--px); color: var(--black); background: var(--gold); border: 3px solid var(--gold); min-height: 44px; text-decoration: none; text-align: center; padding: 4px; }
 @media (orientation: landscape) and (max-height: 520px) {
   #card { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; top: 64px; bottom: auto; width: min(320px, 46%); max-height: calc(100% - 64px - var(--tick, 26px) - 72px); overflow: auto; padding: 10px; }
 }
 
 .sheet { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: grid; place-items: center; padding: 16px; }
 .panel { width: min(480px, 100%); max-height: 100%; overflow: auto; background: var(--black); border: 4px solid var(--white); box-shadow: 4px 4px 0 var(--navy); padding: 16px; }
-.panel h2 { margin: 0 0 10px; font-size: 13px; font-weight: 400; color: var(--gold); }
-.panel h3 { margin: 18px 0 10px; font-size: 10px; font-weight: 400; color: var(--gold); }
+.panel h2 { margin: 0 0 10px; font-size: 16px; font-weight: 400; color: var(--gold); }
+.panel h3 { margin: 18px 0 10px; font-size: 12px; font-weight: 400; color: var(--gold); }
 .panel a { color: var(--sky); }
 .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: -16px; background: var(--black); margin: -16px -16px 6px; padding: 16px 16px 0; }
 .phead h2 { padding-top: 14px; }
 .phead button { box-shadow: none; flex: none; }
-.panel ul { margin: 0 0 14px; padding-left: 14px; color: var(--ice); font-size: 8px; line-height: 1.8; }
-.panel p { margin: 0 0 14px; color: var(--ice); font-size: 8px; line-height: 1.8; }
+.panel ul { margin: 0 0 14px; padding-left: 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
+.panel p { margin: 0 0 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
 .list { display: grid; gap: 6px; margin-bottom: 12px; }
-.list button { text-align: left; width: 100%; font-size: 8px; display: flex; gap: 10px; align-items: center; box-shadow: none; border-width: 2px; line-height: 1.5; }
+.list button { text-align: left; width: 100%; font-size: 10px; display: flex; gap: 10px; align-items: center; box-shadow: none; border-width: 2px; line-height: 1.5; }
 .list button b { font-weight: 400; min-width: 4.5em; }
 .list button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list button em { font-style: normal; color: var(--grey); white-space: nowrap; }
 .list button.on em { color: var(--navy); }
 .key { display: grid; gap: 8px; margin-bottom: 14px; }
-.key div { display: flex; align-items: center; gap: 12px; font-size: 8px; line-height: 1.6; white-space: pre-wrap; }
+.key div { display: flex; align-items: center; gap: 12px; font-size: 10px; line-height: 1.6; white-space: pre-wrap; }
 .key canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: none; }
 .key .ic { width: 36px; display: flex; justify-content: center; flex: none; }
 #splash { position: fixed; inset: 0; z-index: 20; background: var(--black); display: grid; place-items: center; padding: 16px; overflow: auto; }
 #splash .panel { text-align: center; }
-#splash h1 { margin: 6px 0 16px; font-size: 22px; font-weight: 400; color: var(--gold); line-height: 1.3; }
+#splash h1 { margin: 6px 0 18px; font-size: 28px; font-weight: 400; color: var(--gold); line-height: 1.3; }
 #splash p { text-align: left; }
-.panel .warn { color: var(--orange); }
-#bStart { width: 100%; font-size: 12px; margin-top: 4px; }
+.panel p.warn { color: var(--red); display: flex; gap: 10px; align-items: flex-start; }
+.panel p.warn .wicon svg { width: 22px; height: auto; display: block; color: var(--red); }
+.panel p.warn .wicon { flex: none; padding-top: 2px; }
+#bStart { width: 100%; font-size: 14px; margin-top: 4px; }
 #bStart[disabled] { color: var(--grey); border-color: var(--grey); cursor: default; }
 </style>
 </head>
@@ -90,11 +92,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <canvas id="cv"></canvas>
 <div id="splash" role="dialog" aria-labelledby="splashTitle">
   <div class="panel">
-    <h1 id="splashTitle">QUAKE POND</h1>
-    <p>EVERY EARTHQUAKE ON EARTH FROM THE LAST 24 HOURS, LIVE FROM THE U.S. GEOLOGICAL SURVEY (USGS).</p>
-    <p>WE CHECK USGS EVERY MINUTE. NEW QUAKES DROP IN LIKE STONES IN A POND, USUALLY WITHIN MINUTES IN THE US AND LONGER ELSEWHERE.</p>
+    <h1 id="splashTitle">8BIT QUAKE</h1>
+    <p>EVERY EARTHQUAKE ON EARTH FROM THE LAST 24 HOURS, LIVE FROM THE U.S. GEOLOGICAL SURVEY (USGS), CHECKED EVERY MINUTE.</p>
     <p>TAP A TRIANGLE FOR DETAILS. THE GEAR HAS THE KEY, MAP LAYERS AND CREDITS.</p>
-    <p class="warn">FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING. FOR ALERTS, FOLLOW YOUR LOCAL OFFICIALS.</p>
+    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING. FOR ALERTS, FOLLOW YOUR LOCAL OFFICIALS.</span></p>
     <button id="bStart" disabled>LOADING MAP...</button>
   </div>
 </div>
@@ -146,7 +147,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <h3>ABOUT AND CREDITS</h3>
     <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
     <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS.</p>
-    <p class="warn">FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</p>
+    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</span></p>
     <div class="list"><button id="bIntro">SHOW THE INTRO AGAIN</button></div>
   </div>
 </div>
@@ -715,14 +716,14 @@ function text(s, x, y, col, align) {
   return w;
 }
 function frameBox(x, y, w, h) { b.fillStyle = NES.black; b.fillRect(x, y, w, h); b.fillStyle = NES.white; b.fillRect(x, y, w, 1); b.fillRect(x, y + h - 1, w, 1); b.fillRect(x, y, 1, h); b.fillRect(x + w - 1, y, 1, h); }
-/* The ticker: the newest quakes, with the red QUAKE POND header (count and biggest today) between every few.
+/* The ticker: the newest quakes, with the red 8BIT QUAKE header (count and biggest today) between every few.
    It is rebuilt only when a loop finishes, so text never jumps mid-scroll. Tapping a quake in it flies there. */
 var TICK_N = 6, TICK_EVERY = 3, tick = { segs: [], w: 0, x: 0, empty: true };
 function buildTicker(simNow) {
   var n = 0, big = null, recent = [];
   quakes.forEach(function (q) { if (q.time <= simNow && simNow - q.time < 24 * 3600e3) { n++; recent.push(q); if (!big || q.mag > big.mag) big = q; } });
   recent.sort(function (a, c) { return c.time - a.time; });
-  var head = (mode === "replay" ? "QUAKE POND REPLAY" : demo ? "DEMO POND" : "QUAKE POND") + "  " + n + " IN 24H" + (big ? "  TOP M" + big.mag.toFixed(1) : "") + "  NEWEST";
+  var head = (mode === "replay" ? "8BIT QUAKE REPLAY" : demo ? "8BIT QUAKE DEMO" : "8BIT QUAKE") + "  " + n + " IN 24H" + (big ? "  TOP M" + big.mag.toFixed(1) : "") + "  NEWEST";
   var segs = [], x = 0;
   b.font = "8px 'Press Start 2P', monospace";
   function add(s, col, id) { var w = b.measureText(s + "     ").width; segs.push({ x: x, w: w, s: s, col: col, id: id }); x += w; }
@@ -820,12 +821,14 @@ function flyTo(q) { view.lon = q.lon; view.lat = q.lat; view.z = Math.min(ZMAX, 
 var ICONS = {
   replay: ["....#####...", "..##.....#..", "###.......#.", "##...#.....#", "#.#..#.....#", ".....#.....#", ".....###...#", "...........#", ".#........#.", "..#......#..", "...######..."],
   cog: [".....##.....", "..#..##..#..", ".###.##.###.", "..########..", "...##..##...", "####....####", "####....####", "...##..##...", "..########..", ".###.##.###.", "..#..##..#..", ".....##....."],
+  warn: [".....#.....", "....###....", "....###....", "...##.##...", "...##.##...", "..###.###..", "..###.###..", ".#########.", ".####.####.", "###########"],
   x: ["##....##", "###..###", ".######.", "..####..", "..####..", ".######.", "###..###", "##....##"]
 };
 function pixSvg(rows) {
   var d = ""; rows.forEach(function (r, y) { for (var x = 0; x < r.length; x++) if (r[x] === "#") d += "M" + x + " " + y + "h1v1h-1z"; });
   return '<svg viewBox="0 0 ' + rows[0].length + " " + rows.length + '" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
 }
+document.querySelectorAll(".wicon").forEach(function (el) { el.innerHTML = pixSvg(ICONS.warn); });
 $("bKey").innerHTML = pixSvg(ICONS.cog); $("bMode").innerHTML = pixSvg(ICONS.replay);
 document.querySelectorAll(".x").forEach(function (bt) { bt.innerHTML = pixSvg(ICONS.x); bt.addEventListener("click", closeSheets); });
 function sync() {

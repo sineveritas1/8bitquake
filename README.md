@@ -1,4 +1,4 @@
-# Quake Pond (8bitquake)
+# 8bit Quake
 
 Every earthquake on Earth from the last 24 hours, live from the USGS feed, dropped like stones in an 8-bit pond. The map is drawn in NES colors at about 150 pixels on the short side and scaled up with hard edges: Natural Earth land, borders, rivers and cities when zoomed out, OpenStreetMap roads and towns when zoomed in. Personal project.
 
@@ -27,7 +27,7 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
 - Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
 - Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from the home spot, Hurricane UT by default), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds, and on Android phones it buzzes with each burst (iPhones do not let websites vibrate). There is no sound.
-- The ticker at the bottom scrolls the 6 newest quakes, with the red QUAKE POND header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
+- The ticker at the bottom scrolls the 6 newest quakes, with the red 8BIT QUAKE header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
