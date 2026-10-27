@@ -698,7 +698,7 @@ function draw(now) {
   var wall = Date.now(), simNow = wall;
   if (mode === "replay") { var f = ((now - replay0) / 1000 % REPLAY_S) / REPLAY_S; simNow = wall - 24 * 3600e3 * (1 - f); }
   shakeOff = now < shakeUntil ? Math.round((Math.random() - 0.5) * 3) : 0;
-  proj();
+  fitPoles(); proj();
   var busy = interacting(now), key = [view.lon.toFixed(6), view.lat.toFixed(6), view.z.toFixed(5), BW, BH].join(",");
   if (key !== bakeKey || MAP.ver !== bakeVer || busy !== bake.busy) { if (key !== bakeKey) viewMovedAt = now; bakeKey = key; bakeVer = MAP.ver; bake.busy = busy; bake(now); }
   px32.set(base);
@@ -947,8 +947,15 @@ function drawLayers() {
 function openKey() { drawLayers(); $("keySheet").hidden = false; }
 $("bKey").addEventListener("click", openKey);
 $("bIntro").addEventListener("click", function () { closeSheets(); $("splash").hidden = false; $("bStart").focus(); });
+// east and west wrap forever, but the poles are hard edges: never zoom out past the whole world top to bottom,
+// and never pan past 90 degrees north or south, so no empty black band shows above or below the map
+function minZoom() { return BH / 180; }
+function fitPoles() {
+  if (view.z < minZoom()) view.z = minZoom();
+  var half = BH / 2 / view.z; view.lat = clamp(view.lat, -90 + half, 90 - half);
+}
 function zoomBy(f, ax, ay) {
-  var z0 = view.z, z1 = clamp(view.z * f, Math.min(BW / 360, BH / 170) * 0.9, ZMAX); if (z1 === z0) return;
+  var z0 = view.z, z1 = clamp(view.z * f, minZoom(), ZMAX); if (z1 === z0) return;
   if (ax != null) {
     var zx0 = z0 * kxFor(z0, view.lat), zx1 = z1 * kxFor(z1, view.lat);
     view.lon += (ax - BW / 2) * (1 / zx0 - 1 / zx1); view.lat -= (ay - BH / 2) * (1 / z0 - 1 / z1);

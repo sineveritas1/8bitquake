@@ -40,6 +40,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - Must work on desktop, phones and tablets, Android and iOS, portrait and landscape. Run `node tests/devices.js` before merging layout changes; it should print `ok` for every device.
 - iPhone notch and home bar: the ticker is pushed up by the bottom safe-area inset (`SAFE_B`, read from the hidden `#safe` element) and `--tick` includes it, so everything stacked above the ticker uses `var(--tick) + 8px`.
 - The page itself never scrolls (`touch-action: none` on body); menus, the card and the title screen scroll inside themselves (`touch-action: pan-y`).
+- The poles are hard edges (`fitPoles()`): the view never zooms out past the whole world top to bottom or pans past 90 degrees, so no black band shows. East and west wrap.
 - If the open card would push zoom or replay into the top buttons, `fitSides()` hides them (pinch still zooms).
 - Card stats are always three boxes in one row.
 
