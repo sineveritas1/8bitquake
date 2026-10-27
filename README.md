@@ -24,12 +24,19 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 ## Controls
 
 - Drag to pan, pinch or scroll to zoom, `+` and `-` buttons.
-- Tap a dot for its card (magnitude, place, depth, felt reports, distance from you).
+- Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
+- Tap a triangle for its card (magnitude, place, depth, felt reports, distance from you). RIPPLE AGAIN replays its ripple and sound.
+- The ticker at the bottom scrolls the 6 newest quakes, with the red QUAKE POND header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
 - **LIVE / 24H:** live view, or a 72 second replay of the last 24 hours.
 - **SND:** square wave blip for each new quake.
 - **LIST:** biggest 40 quakes today.
 - **USA / WORLD:** jump between views.
-- Keys: `l` list, `r` replay, `s` sound, `Esc` close.
+- **KEY:** legend, plus on and off switches for place names, borders, roads and town icons (remembered on this device).
+- Keys: `l` list, `k` key, `r` replay, `s` sound, `Esc` close.
+
+All distances and depths are in miles and feet. USGS place names like "283 km E of Levuka" are converted to miles.
+
+Ripple timing lives in the `RIPPLE` object near the top of the script, with a comment on each knob.
 
 "From you" distance uses Hurricane, Utah by default. It reads an optional override from `localStorage` key `standby.cfg` (`{"lat":..,"lon":..}`).
 
