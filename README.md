@@ -26,15 +26,14 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - Drag to pan, pinch or scroll to zoom, `+` and `-` buttons.
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
 - Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
-- Tap a triangle for its card (magnitude, place, depth, felt reports, distance from you). RIPPLE AGAIN replays its ripple and sound.
+- Tap a triangle to select it. Its card shows magnitude, place, depth, felt reports, distance from you, and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds, and on Android phones it buzzes with each burst (iPhones do not let websites vibrate). There is no sound.
 - The ticker at the bottom scrolls the 6 newest quakes, with the red QUAKE POND header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
-- **Speaker (bottom left):** sound on or off. It blips when a new quake arrives from USGS, on RIPPLE AGAIN, once when turned on, and every few seconds in demo mode. Everything else is silent.
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
-- **Gear:** map layer switches (place names, borders, roads, town icons, remembered on this device), the key, what makes sounds, and credits.
+- **Gear:** switches for place names, borders, roads, town icons and vibration (remembered on this device), the key, how selection and vibration work, and credits.
 - Menus close with their X, a tap outside, or `Esc`.
-- Keys: `l` list, `k` settings, `r` replay, `s` sound.
+- Keys: `l` list, `k` settings, `r` replay.
 
 Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
 

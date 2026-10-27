@@ -18,9 +18,11 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - Units are miles and feet only, never km. `toMiles()` rewrites USGS place strings.
 - Quakes are triangles colored by magnitude (`magColor`, `triSize`); solid under 6 hours old, hollow after. The KEY sheet draws its legend with the same `tri()` function so they always match.
 - No HUD box. QUAKE POND, the count and top quake live in the ticker in red, between the newest quakes. Ticker rebuilds only when a loop ends so it never jumps.
-- Layer switches (labels, borders, roads, town icons) are saved in localStorage `quakepond.layers`.
+- Switches (labels, borders, roads, town icons, vibrate) are saved in localStorage `quakepond.layers`.
 - Ripple timing knobs are all in `RIPPLE`.
-- Controls: LIST, USA/WORLD and a gear top right; speaker and replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.
+- No audio at all; it was removed on purpose. A selected quake repeats its ripple (`RIPPLE.selectedEvery`) and buzzes the phone once per burst via `navigator.vibrate` (Android only), switchable in the gear menu.
+- Card has a "feels like" line (`feelFor`): USGS MMI wording when `mmi >= 2` or `cdi` from 3+ reports, else a magnitude guide. Remote ocean quakes report near-zero intensity, so low values are ignored.
+- Controls: LIST, USA/WORLD and a gear top right; replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.
 - Credits live in the gear menu and the title screen. A small "© OPENSTREETMAP" stays on the map whenever OSM data can be on screen, because OSM requires visible attribution.
 - Title screen shows on every visit. Not an earthquake warning; copy says so.
 - Count wording is "IN 24H", never "today": the feed is a rolling 24 hours.
