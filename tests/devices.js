@@ -37,7 +37,7 @@ const ov = (a, b) => a && b && a.x < b.x + b.width && b.x < a.x + a.width && a.y
     const touch = !!dev.hasTouch, tap = async (sel) => touch ? p.tap(sel) : p.click(sel);
     const tapXY = async (x, y) => touch ? p.touchscreen.tap(x, y) : p.mouse.click(x, y);
     const fn = name.replace(/\W+/g, '_');
-    await p.goto('process.argv[2] || 'http://localhost:8787/'');
+    await p.goto(process.argv[2] || 'http://localhost:8787/');
     await p.waitForSelector('#bStart:not([disabled])', { timeout: 40000 });
     const vp = p.viewportSize();
     let sb = await p.locator('#bStart').boundingBox();
