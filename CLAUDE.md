@@ -20,6 +20,10 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - No HUD box. QUAKE POND, the count and top quake live in the ticker in red, between the newest quakes. Ticker rebuilds only when a loop ends so it never jumps.
 - Layer switches (labels, borders, roads, town icons) are saved in localStorage `quakepond.layers`.
 - Ripple timing knobs are all in `RIPPLE`.
+- Controls: LIST, USA/WORLD and a gear top right; speaker and replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.
+- Credits live in the gear menu and the title screen. A small "© OPENSTREETMAP" stays on the map whenever OSM data can be on screen, because OSM requires visible attribution.
+- Title screen shows on every visit. Not an earthquake warning; copy says so.
+- Count wording is "IN 24H", never "today": the feed is a rolling 24 hours.
 - Attribution line (USGS, Natural Earth, OpenStreetMap) must stay visible.
 
 ## Current step

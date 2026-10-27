@@ -25,14 +25,20 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 
 - Drag to pan, pinch or scroll to zoom, `+` and `-` buttons.
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
+- Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
 - Tap a triangle for its card (magnitude, place, depth, felt reports, distance from you). RIPPLE AGAIN replays its ripple and sound.
 - The ticker at the bottom scrolls the 6 newest quakes, with the red QUAKE POND header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
-- **LIVE / 24H:** live view, or a 72 second replay of the last 24 hours.
-- **SND:** square wave blip for each new quake.
-- **LIST:** biggest 40 quakes today.
+- **Speaker (bottom left):** sound on or off. It blips when a new quake arrives from USGS, on RIPPLE AGAIN, once when turned on, and every few seconds in demo mode. Everything else is silent.
+- **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
+- **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
-- **KEY:** legend, plus on and off switches for place names, borders, roads and town icons (remembered on this device).
-- Keys: `l` list, `k` key, `r` replay, `s` sound, `Esc` close.
+- **Gear:** map layer switches (place names, borders, roads, town icons, remembered on this device), the key, what makes sounds, and credits.
+- Menus close with their X, a tap outside, or `Esc`.
+- Keys: `l` list, `k` settings, `r` replay, `s` sound.
+
+Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
+
+Roads and towns from OpenStreetMap appear once you zoom in to about 150 miles across (four taps of + from the USA view). Each grid cell is asked of the Overpass servers one at a time with a 20 second limit; if one server fails, the next is tried, and a busy message shows in the top left.
 
 All distances and depths are in miles and feet. USGS place names like "283 km E of Levuka" are converted to miles.
 
