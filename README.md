@@ -27,7 +27,7 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - Drag to pan, pinch or scroll to zoom, `+` and `-` buttons.
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
 - Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
-- Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from the home spot, Hurricane UT by default), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds. There is no sound or vibration.
+- Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from your own location; tap TAP TO SET the first time), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds. There is no sound or vibration.
 - The ticker at the bottom scrolls the 6 newest quakes, with the red 8-BIT QUAKE header (count and biggest today) between them. Tap a quake in it to zoom there; tap the header to open the list.
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
@@ -47,7 +47,7 @@ All distances and depths are in miles and feet. USGS place names like "283 km E 
 
 Ripple timing lives in the `RIPPLE` object near the top of the script, with a comment on each knob.
 
-"From you" distance uses Hurricane, Utah by default. It reads an optional override from `localStorage` key `standby.cfg` (`{"lat":..,"lon":..}`).
+"From you" needs a starting point. Tap the FROM YOU box (or the gear, then SET YOUR LOCATION) and either tap USE MY LOCATION, which the phone asks permission for the first time, or type a city and state or a ZIP code, which is looked up with Nominatim (OpenStreetMap's place search). The result is saved on that device only, in `localStorage` key `8bitquake.home`, rounded to about half a mile. A GPS position is never sent anywhere; a typed place is sent to Nominatim to look it up.
 
 ## Run it locally
 

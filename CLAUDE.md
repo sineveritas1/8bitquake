@@ -14,7 +14,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - Overpass is a shared public service. Keep queries per cell, only after the view settles, one at a time, with backoff and server rotation. Do not make it chattier.
 - USGS polling: `all_day` every 5 minutes, `all_hour` every 60 seconds. USGS does not update faster.
 - Demo quakes only when USGS fails, always labeled DEMO.
-- Default home spot is Hurricane, UT.
+- No default home spot. "FROM YOU" says TAP TO SET until the viewer picks USE MY LOCATION (browser geolocation, asked once) or types a city, state or ZIP (looked up with Nominatim, 5 digits = US ZIP). Saved in localStorage `8bitquake.home`, rounded to 0.01 degree; GPS coordinates are never sent anywhere. The pink cross shows only once set.
 - Units are miles and feet only, never km. `toMiles()` rewrites USGS place strings.
 - Quakes are triangles colored by magnitude (`magColor`, `triSize`); solid under 6 hours old, hollow after. The KEY sheet draws its legend with the same `tri()` function so they always match.
 - No HUD box. 8-BIT QUAKE, the count and top quake live in the ticker in red, between the newest quakes. Ticker rebuilds only when a loop ends so it never jumps.
