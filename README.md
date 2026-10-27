@@ -32,6 +32,7 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
+- **?:** about, questions, credits and contact.
 - **Gear:** switches for place names, borders, roads, town icons (remembered on this device), the key, how selection works, and credits.
 - Menus close with their X, a tap outside, or `Esc`.
 - Layout is tailored per device: phones get a bottom card; tablets and desktops get a side panel and a finer map; desktops add a pointer cursor and arrow-key panning.
@@ -48,6 +49,14 @@ All distances and depths are in miles and feet. USGS place names like "283 km E 
 Ripple timing lives in the `RIPPLE` object near the top of the script, with a comment on each knob.
 
 "From you" needs a starting point. Tap the FROM YOU box (or the gear, then SET YOUR LOCATION; CLEAR MY LOCATION is there too) and either tap USE MY LOCATION, which the phone asks permission for the first time, or type a city and state or a ZIP code, which is looked up with Nominatim (OpenStreetMap's place search). The result is saved on that device only, in `localStorage` key `8bitquake.home`, rounded to about half a mile. A GPS position is never sent anywhere; a typed place is sent to Nominatim to look it up.
+
+## Search, sharing and icons
+
+- Page title, description, canonical URL, Open Graph and Twitter tags, and schema.org data (WebSite, WebApplication, FAQPage) are in the `<head>` of `index.html`. The canonical URL is `https://8bitquake.pages.dev/`; if a custom domain is added, change it there, in `robots.txt` and in `sitemap.xml`.
+- `favicon.ico`, `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `og-image.png` (link preview) and `img/made-by-8bit.png` (the About badge) are all built by `node tools/build-icons.js`. The icon is a pixel quake ripple: two rings around a red triangle.
+- `manifest.webmanifest` makes it installable to a phone home screen. `robots.txt` and `sitemap.xml` are for search engines. `_headers` sets caching and content types on Cloudflare Pages.
+- The ? button opens About: what it is, how it works, questions, credits, and contact (hello@neondeadhead.com).
+- Lighthouse (October 2026): SEO 100, best practices 100, accessibility 93. The only miss is the viewport blocking page zoom, which is on purpose so pinch zooms the map.
 
 ## Run it locally
 

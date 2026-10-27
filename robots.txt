@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /tests/
+Disallow: /tools/
+
+Sitemap: https://8bitquake.pages.dev/sitemap.xml
