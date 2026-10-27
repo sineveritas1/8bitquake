@@ -42,15 +42,17 @@ const ov = (a, b) => a && b && a.x < b.x + b.width && b.x < a.x + a.width && a.y
     const vp = p.viewportSize();
     let sb = await p.locator('#bStart').boundingBox();
     if (sb.y + sb.height > vp.height) {
-      if (touch) await drag(cdp, vp.width / 2, vp.height * 0.8, vp.height * 0.2);
-      else { await p.mouse.move(vp.width / 2, vp.height / 2); await p.mouse.wheel(0, 400); }
-      await p.waitForTimeout(400); sb = await p.locator('#bStart').boundingBox();
+      for (let i = 0; i < 3 && sb.y + sb.height > vp.height; i++) {
+        if (touch) await drag(cdp, vp.width / 2, vp.height * 0.8, vp.height * 0.2);
+        else { await p.mouse.move(vp.width / 2, vp.height / 2); await p.mouse.wheel(0, 400); }
+        await p.waitForTimeout(400); sb = await p.locator('#bStart').boundingBox();
+      }
       if (sb.y + sb.height > vp.height) probs.push('start unreachable'); else probs.push('(start needs a scroll)');
     }
     await p.screenshot({ path: require('path').join(OUT, fn) + '-0.png' });
     await tap('#bStart'); await p.waitForTimeout(3500);
     const g = await p.evaluate(() => { const r = id => { const e = document.getElementById(id); if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
-      return { sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, top: r('top'), dock: r('dock'), zoom: r('zoom'), tick: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tick')), safe: [getComputedStyle(document.getElementById('safe')).paddingTop, getComputedStyle(document.getElementById('safe')).paddingBottom] }; });
+      return { dev: document.documentElement.getAttribute('data-dev'), sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, top: r('top'), dock: r('dock'), zoom: r('zoom'), tick: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tick')), safe: [getComputedStyle(document.getElementById('safe')).paddingTop, getComputedStyle(document.getElementById('safe')).paddingBottom] }; });
     if (g.sw > vp.width || g.sh > vp.height) probs.push('page scrolls ' + g.sw + 'x' + g.sh);
     for (const k of ['top', 'dock', 'zoom']) { const b = g[k]; if (b.x < 0 || b.y < 0 || b.x + b.width > vp.width + 0.5 || b.y + b.height > vp.height - g.tick + 0.5) probs.push(k + ' out of bounds'); }
     if (ov(g.dock, g.zoom)) probs.push('dock overlaps zoom'); if (ov(g.top, g.zoom)) probs.push('top overlaps zoom');
@@ -85,7 +87,7 @@ const ov = (a, b) => a && b && a.x < b.x + b.width && b.x < a.x + a.width && a.y
     await tapXY(Math.round(vp.width * 0.7), Math.round(vp.height - c.tick / 2)); await p.waitForTimeout(800);
     const tk = await p.evaluate(() => !document.getElementById('card').hidden || !document.getElementById('listSheet').hidden);
     if (!tk) probs.push('ticker tap did nothing');
-    console.log((probs.filter(x=>x[0]!=='(').length ? 'FAIL ' : 'ok   ') + name.padEnd(20), JSON.stringify({ vp: vp.width + 'x' + vp.height, tick: g.tick, safe: g.safe.join('/') }), probs.join('; '), errs.length ? 'ERR ' + errs.join(' | ') : '');
+    console.log((probs.filter(x=>x[0]!=='(').length ? 'FAIL ' : 'ok   ') + name.padEnd(20), JSON.stringify({ dev: g.dev, vp: vp.width + 'x' + vp.height, tick: g.tick, safe: g.safe.join('/') }), probs.join('; '), errs.length ? 'ERR ' + errs.join(' | ') : '');
     await ctx.close();
   }
   await br.close();

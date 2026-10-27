@@ -25,11 +25,17 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - Controls: LIST, USA/WORLD and a gear top right; replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.
 - Credits live in the gear menu and the title screen. A small "© OPENSTREETMAP" stays on the map whenever OSM data can be on screen, because OSM requires visible attribution.
 - Name is "8-BIT Quake", written 8-BIT QUAKE on screen. Never "Quake Pond" (old name). The localStorage key `quakepond.layers` keeps the old name on purpose so saved settings survive.
-- Title screen shows on every visit. Not an earthquake warning; the safety lines are red with a red caution triangle (`ICONS.warn`).
+- Title screen shows on every visit. Not an earthquake warning; the safety lines are white text under a centered red caution triangle (`ICONS.warn`).
 - Count wording is "IN 24H", never "today": the feed is a rolling 24 hours.
 - Attribution line (USGS, Natural Earth, OpenStreetMap) must stay visible.
 
 ## Devices
+
+- Three tailored layouts, chosen in `deviceClass()` and set as `data-dev` on `<html>`:
+  - **phone** (short side under 600px): bottom card, map 150 pixels on the short side.
+  - **tablet** (short side 600px or more, touch): card as a right side panel, bigger buttons, map 180 pixels.
+  - **desktop** (mouse or trackpad, big screen): right side panel, pointer cursor over quakes, keyboard hints in the gear menu (arrows pan), map 200 pixels.
+  - Flying to a quake centers it in the part of the map the card leaves open.
 
 - Must work on desktop, phones and tablets, Android and iOS, portrait and landscape. Run `node tests/devices.js` before merging layout changes; it should print `ok` for every device.
 - iPhone notch and home bar: the ticker is pushed up by the bottom safe-area inset (`SAFE_B`, read from the hidden `#safe` element) and `--tick` includes it, so everything stacked above the ticker uses `var(--tick) + 8px`.

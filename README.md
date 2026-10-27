@@ -33,7 +33,8 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - **USA / WORLD:** jump between views.
 - **Gear:** switches for place names, borders, roads, town icons and vibration (remembered on this device), the key, how selection and vibration work, and credits.
 - Menus close with their X, a tap outside, or `Esc`.
-- Keys: `l` list, `k` settings, `r` replay.
+- Layout is tailored per device: phones get a bottom card; tablets and desktops get a side panel and a finer map; desktops add a pointer cursor and arrow-key panning.
+- Keys: `l` list, `k` settings, `r` replay, `+` and `-` zoom, arrows pan, `Esc` close.
 
 Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
 
