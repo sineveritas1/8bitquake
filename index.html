@@ -176,7 +176,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <p>OR TYPE A CITY AND STATE, OR A ZIP CODE:</p>
     <form class="locin" id="locForm"><input id="locText" type="text" inputmode="search" autocomplete="postal-code" placeholder="ST GEORGE UT" aria-label="City and state or ZIP code" /><button id="bFind" type="submit">FIND</button></form>
     <p id="locNote"></p>
-    <div class="list"><button id="bLocClear" hidden>FORGET MY LOCATION</button></div>
+    <div class="list"><button id="bLocClear" hidden>CLEAR MY LOCATION</button></div>
   </div>
 </div>
 <div id="keySheet" class="sheet" hidden>
@@ -184,15 +184,15 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="phead"><h2 id="keyTitle">SETTINGS</h2><button class="x icon" aria-label="Close"></button></div>
     <h3>OPTIONS</h3>
     <div class="list" id="layerList"></div>
+    <h3>YOUR LOCATION</h3>
+    <p id="locNow"></p>
+    <div class="list"><button id="bLocOpen">SET YOUR LOCATION</button><button id="bLocClear2" hidden>CLEAR MY LOCATION</button></div>
     <h3>KEY</h3>
     <p>EACH TRIANGLE IS A QUAKE. COLOR AND SIZE SHOW MAGNITUDE.</p>
     <div class="key" id="keyMags"></div>
     <div class="key" id="keyMore"></div>
     <h3>SELECTED QUAKE</h3>
     <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS. THERE IS NO SOUND OR VIBRATION.</p>
-    <h3>YOUR LOCATION</h3>
-    <p id="locNow"></p>
-    <div class="list"><button id="bLocOpen">SET YOUR LOCATION</button></div>
     <h3>ABOUT AND CREDITS</h3>
     <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
     <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS. TYPED PLACES ARE LOOKED UP WITH <a href="https://nominatim.org/" target="_blank" rel="noopener">NOMINATIM</a>.</p>
@@ -947,13 +947,15 @@ function saveHome(lat, lon, label) {
 }
 function syncHome() {
   $("locNow").textContent = home ? "MILES ARE MEASURED FROM " + home.label + "." : "NOT SET. MILES FROM YOU WILL SHOW ONCE YOU SET A STARTING POINT.";
-  $("bLocOpen").textContent = home ? "CHANGE YOUR LOCATION" : "SET YOUR LOCATION"; $("bLocClear").hidden = !home;
+  $("bLocOpen").textContent = home ? "CHANGE YOUR LOCATION" : "SET YOUR LOCATION"; $("bLocClear").hidden = !home; $("bLocClear2").hidden = !home;
 }
 function openLoc() { closeSheets(); $("locNote").textContent = home ? "NOW: " + home.label + "." : ""; $("locSheet").hidden = false; }
 $("sDistBox").addEventListener("click", openLoc);
 $("sDistBox").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLoc(); } });
 $("bLocOpen").addEventListener("click", openLoc);
-$("bLocClear").addEventListener("click", function () { home = null; try { localStorage.removeItem("8bitquake.home"); } catch (e) {} syncHome(); $("locNote").textContent = "FORGOTTEN."; if (sel) select(sel); });
+function clearHome() { home = null; try { localStorage.removeItem("8bitquake.home"); } catch (e) {} syncHome(); $("locNote").textContent = "CLEARED."; if (sel) select(sel); }
+$("bLocClear").addEventListener("click", clearHome);
+$("bLocClear2").addEventListener("click", clearHome);
 $("bGeo").addEventListener("click", function () {
   if (!navigator.geolocation) { $("locNote").textContent = "THIS BROWSER CANNOT SHARE A LOCATION. TYPE A CITY OR ZIP INSTEAD."; return; }
   $("locNote").textContent = "ASKING YOUR PHONE...";

@@ -47,7 +47,7 @@ All distances and depths are in miles and feet. USGS place names like "283 km E 
 
 Ripple timing lives in the `RIPPLE` object near the top of the script, with a comment on each knob.
 
-"From you" needs a starting point. Tap the FROM YOU box (or the gear, then SET YOUR LOCATION) and either tap USE MY LOCATION, which the phone asks permission for the first time, or type a city and state or a ZIP code, which is looked up with Nominatim (OpenStreetMap's place search). The result is saved on that device only, in `localStorage` key `8bitquake.home`, rounded to about half a mile. A GPS position is never sent anywhere; a typed place is sent to Nominatim to look it up.
+"From you" needs a starting point. Tap the FROM YOU box (or the gear, then SET YOUR LOCATION; CLEAR MY LOCATION is there too) and either tap USE MY LOCATION, which the phone asks permission for the first time, or type a city and state or a ZIP code, which is looked up with Nominatim (OpenStreetMap's place search). The result is saved on that device only, in `localStorage` key `8bitquake.home`, rounded to about half a mile. A GPS position is never sent anywhere; a typed place is sent to Nominatim to look it up.
 
 ## Run it locally
 
