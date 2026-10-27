@@ -62,6 +62,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .list button b { font-weight: 400; min-width: 4.5em; }
 .list button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list button em { font-style: normal; color: var(--grey); white-space: nowrap; }
+.list button.on em { color: var(--navy); }
+.key { display: grid; gap: 8px; margin-bottom: 14px; }
+.key div { display: flex; align-items: center; gap: 12px; font-size: 8px; line-height: 1.6; white-space: pre-wrap; }
+.key canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: none; }
+.key .ic { width: 36px; display: flex; justify-content: center; flex: none; }
 #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; background: var(--black); color: var(--white); font-size: 12px; line-height: 2; text-align: center; padding: 16px; }
 @media (prefers-reduced-motion: reduce) { #loading { animation: none; } }
 </style>
@@ -74,6 +79,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <button id="bSound" aria-label="Turn the blip sound on or off">SND</button>
   <button id="bList" aria-label="Biggest quakes today">LIST</button>
   <button id="bWorld" aria-label="Switch between the whole world and the US">USA</button>
+  <button id="bKey" aria-label="Map key and layers">KEY</button>
 </div>
 <div id="credit">QUAKES USGS. MAP NATURAL EARTH. ROADS AND TOWNS &copy; OPENSTREETMAP CONTRIBUTORS.</div>
 <div id="zoom">
@@ -93,7 +99,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div><i>FROM YOU</i><span id="sDist"></span></div>
   </div>
   <div class="row2">
-    <button id="cDrop">DROP AGAIN</button>
+    <button id="cDrop" aria-label="Play this quake's ripple and sound again">RIPPLE AGAIN</button>
     <a id="cLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">USGS PAGE</a>
   </div>
 </div>
@@ -103,6 +109,17 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <p id="listNote"></p>
     <div class="list" id="quakes"></div>
     <div class="list"><button id="bListClose">CLOSE</button></div>
+  </div>
+</div>
+<div id="keySheet" class="sheet" hidden>
+  <div class="panel" role="dialog" aria-labelledby="keyTitle">
+    <h2 id="keyTitle">KEY</h2>
+    <p>EACH TRIANGLE IS A QUAKE. COLOR AND SIZE SHOW MAGNITUDE.</p>
+    <div class="key" id="keyMags"></div>
+    <div class="key" id="keyMore"></div>
+    <h2>MAP LAYERS</h2>
+    <div class="list" id="layerList"></div>
+    <div class="list"><button id="bKeyClose">CLOSE</button></div>
   </div>
 </div>
 <script>
@@ -122,6 +139,9 @@ function magColor(m) { return m >= 6 ? "red" : m >= 5 ? "orange" : m >= 4 ? "gol
 /* ================= setup ================= */
 var cfg = { name: "HURRICANE UT", lat: 37.1753, lon: -113.2899 };
 try { var saved = JSON.parse(localStorage.getItem("standby.cfg") || "null"); if (saved) { cfg.lat = +saved.lat || cfg.lat; cfg.lon = +saved.lon || cfg.lon; } } catch (e) {}
+// map layers the viewer can switch off from the KEY sheet; remembered on this device only
+var layers = { labels: true, borders: true, roads: true, towns: true };
+try { var savedL = JSON.parse(localStorage.getItem("quakepond.layers") || "null"); if (savedL) Object.keys(layers).forEach(function (k) { if (typeof savedL[k] === "boolean") layers[k] = savedL[k]; }); } catch (e) {}
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 var buf = document.createElement("canvas"), b = buf.getContext("2d");
 var BW = 0, BH = 0, SCALE = 1, img = null, px32 = null, SHORT = 150, ZMAX = 900;
@@ -316,7 +336,7 @@ function addFeed(j) {
     var p = f.properties || {}, g = (f.geometry || {}).coordinates || [];
     if (typeof g[0] !== "number" || typeof p.mag !== "number") return;
     var q = quakes.get(f.id);
-    var rec = { id: f.id, lon: g[0], lat: g[1], depth: g[2] || 0, mag: p.mag, place: p.place || "Unknown place", time: p.time, url: p.url || "https://earthquake.usgs.gov/",
+    var rec = { id: f.id, lon: g[0], lat: g[1], depth: g[2] || 0, mag: p.mag, place: toMiles(p.place || "Unknown place"), time: p.time, url: p.url || "https://earthquake.usgs.gov/",
       felt: p.felt || 0, tsunami: !!p.tsunami, alert: p.alert || "", type: p.type || "earthquake" };
     if (!q) { quakes.set(f.id, rec); if (!firstLoad && now - rec.time < 3 * 3600e3) fresh.push(rec); }
     else Object.assign(q, rec);
@@ -325,6 +345,13 @@ function addFeed(j) {
   fresh.sort(function (a, c) { return a.time - c.time; }).forEach(function (q, i) { setTimeout(function () { splash(q, true); }, i * 700); });
   firstLoad = false;
   updateLatest();
+}
+// USGS writes places like "283 km E of Levuka, Fiji"; we show miles and feet everywhere
+function toMiles(s) { return s.replace(/(\d+(?:\.\d+)?)\s*km\b/gi, function (m, n) { return Math.max(1, Math.round(n * 0.621371)) + " mi"; }); }
+function depthStr(km) {
+  if (km <= 0) return "AT SURFACE";
+  var mi = km * 0.621371;
+  return mi < 1 ? Math.max(100, Math.round(km * 3280.84 / 100) * 100).toLocaleString("en-US") + " FT" : (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + " MI";
 }
 function updateLatest() { latest = null; quakes.forEach(function (q) { if (!latest || q.time > latest.time) latest = q; }); }
 async function getJSON(url) { var r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
@@ -354,10 +381,23 @@ function endDemo() { demo = false; quakes.forEach(function (q, k) { if (q.demo) 
 var demoAt = 0;
 function stepDemo(now) { if (!demo || now - demoAt < 9000) return; demoAt = now; var q = demoQuake(Date.now(), 0); quakes.set(q.id, q); latest = q; splash(q, true); }
 
-/* ================= ripples ================= */
-function reach(m) { return 0.5 * Math.pow(1.55, m); } // ring radius in degrees: M2 1.2, M4 2.9, M6 6.9, M8 16.6
+/* ================= ripples =================
+   All the timing knobs live here. Each ring starts RIPPLE.gap seconds after the one before it, grows from the epicenter
+   out to reach(mag) fast at first and slower at the end (like water), and fades out over its life. */
+var RIPPLE = {
+  gap: 0.5,           // seconds between one ring and the next
+  reachBase: 0.5,     // final ring radius in degrees is reachBase * reachGrowth ^ magnitude
+  reachGrowth: 1.55,  // so M2 1.2, M4 2.9, M6 6.9, M8 16.6 degrees
+  splashLife: 7,      // a fresh drop (new quake, tap, list, RIPPLE AGAIN): seconds each ring lives
+  splashRings: 1.5,   //   rings per point of magnitude, at least 2
+  liveLife: 5,        // live mode, quakes under an hour old: seconds each ring lives
+  liveEvery: 9,       //   seconds between repeats; keep above gap * rings + liveLife
+  replayLife: 4.5,    // 24H replay: ring life in replay seconds
+  replayRings: 1.3    //   rings per point of magnitude, at least 2
+};
+function reach(m) { return RIPPLE.reachBase * Math.pow(RIPPLE.reachGrowth, m); }
 function splash(q, isNew) {
-  splashes.push({ q: q, t0: performance.now(), rings: Math.max(2, Math.round(q.mag * 1.5)), big: true });
+  splashes.push({ q: q, t0: performance.now(), rings: Math.max(2, Math.round(q.mag * RIPPLE.splashRings)), big: true });
   if (isNew) { latest = q; blip(q.mag); if (q.mag >= 5) shakeUntil = performance.now() + 900 + q.mag * 150; }
 }
 var shakeUntil = 0, shakeOff = 0;
@@ -389,6 +429,19 @@ var ptrs = {}, lastWheel = 0;
 function interacting(now) { return Object.keys(ptrs).length > 0 || now - lastWheel < 300; }
 
 function plot(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < BW && y < BH) px32[y * BW + x] = c; }
+function plotName(x, y, name) { plot(x, y, C[name]); }
+// quake marker: an upright pixel triangle h rows tall with a one pixel black outline, centered on the epicenter
+function triSize(m) { return m >= 6 ? 9 : m >= 5 ? 7 : m >= 4 ? 6 : m >= 2.5 ? 5 : 3; }
+function tri(pl, cx, cy, h, col, hollow) {
+  var top = cy - ((h * 2 / 3) | 0), r, x, half, pass;
+  for (pass = 0; pass < 2; pass++) for (r = 0; r < h; r++) {
+    half = Math.round(r * 0.58);
+    for (x = -half; x <= half; x++) {
+      if (pass) { if (!hollow || r === h - 1 || x === -half || x === half) pl(cx + x, top + r, col); }
+      else for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) pl(cx + x + ox, top + r + oy, "black");
+    }
+  }
+}
 function ring(cx, cy, r, c, density, seed) { // midpoint circle; density thins the ring as it fades, in a fixed ordered-dither pattern
   r = Math.round(r); if (r < 1) { plot(cx, cy, c); return; }
   var x = r, y = 0, err = 1 - r, k = 0;
@@ -404,7 +457,7 @@ function ring(cx, cy, r, c, density, seed) { // midpoint circle; density thins t
 function drawRipples(cx, cy, q, age, rings, strength, life) {
   var R = reach(q.mag) * view.z, col = C[magColor(q.mag)];
   for (var i = 0; i < rings; i++) {
-    var t = age - i * 0.5; if (t < 0 || t > life) continue;
+    var t = age - i * RIPPLE.gap; if (t < 0 || t > life) continue;
     var f = t / life, r = R * (1 - Math.pow(1 - f, 2)), fade = (1 - f) * strength;
     if (fade < 0.06) continue;
     ring(cx, cy, r, fade > 0.55 ? col : fade > 0.3 ? C.ice : C.sky, fade * 2, i);
@@ -512,15 +565,17 @@ function bake(now) {
   var maxRank = z < 2 ? 2 : z < 5 ? 4 : 6;
   if (z < 150) MAP.rivers.forEach(function (L) { if (L.rank <= maxRank) drawLine(L, STY.river); });
   osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === "river") drawLine(L, STY.river); }); }); });
-  if (z >= 3.5) MAP.states.forEach(function (L) { drawLine(L, STY.state); });
-  STY.country.c = z < 4 ? C.crimson : C.red;
-  MAP.countries.forEach(function (L) { drawLine(L, STY.country); });
+  if (layers.borders) {
+    if (z >= 3.5) MAP.states.forEach(function (L) { drawLine(L, STY.state); });
+    STY.country.c = z < 4 ? C.crimson : C.red;
+    MAP.countries.forEach(function (L) { drawLine(L, STY.country); });
+  }
   STY.motorway.w = z >= 250;
-  ["minor", "tertiary", "secondary", "primary", "trunk", "motorway"].forEach(function (kind) {
+  if (layers.roads) ["minor", "tertiary", "secondary", "primary", "trunk", "motorway"].forEach(function (kind) {
     osm.forEach(function (cells) { cells.forEach(function (c) { c.lines.forEach(function (L) { if (L.kind === kind) drawLine(L, STY[kind]); }); }); });
   });
 
-  layoutPlaces(osm);
+  if (layers.labels || layers.towns) layoutPlaces(osm);
 }
 
 /* ================= towns and cities: building icons and labels, biggest first, nothing overlapping ================= */
@@ -546,14 +601,15 @@ function layoutPlaces(osm) {
     var p = list[i], s = toScr(p.lat, p.lon), x = Math.round(s[0]), y = Math.round(s[1]);
     if (x < 0 || y < 0 || x >= BW || y >= BH) continue;
     var key = p.name + ":" + Math.round(p.lat * 3) + ":" + Math.round(p.lon * 3); if (seen[key]) continue;
-    var spr = iconFor(p);
+    var spr = layers.towns ? iconFor(p) : null;
+    if (!spr && !layers.labels) continue;
     if (spr) { var ib = [x - (spr.w >> 1) - 1, y - (spr.h >> 1) - 1, spr.w + 2, spr.h + 2]; if (hits(ib)) continue; boxes.push(ib); }
     seen[key] = 1; placed.push([p, x, y, spr]);
   }
   placed.forEach(function (it) {
     var p = it[0], x = it[1], y = it[2], spr = it[3], lw = textW(p.name) + 2, lb = null, hw = spr ? (spr.w >> 1) + 2 : 0;
     var opts = spr ? [[x + hw, y - 3], [x - hw - lw, y - 3], [x - (lw >> 1), y + (spr.h >> 1) + 2], [x - (lw >> 1), y - (spr.h >> 1) - 9]] : [[x - (lw >> 1), y - 3]];
-    for (var o = 0; o < opts.length; o++) { var bx = [opts[o][0], opts[o][1], lw, 7]; if (!hits(bx)) { lb = bx; break; } }
+    for (var o = 0; o < opts.length && layers.labels; o++) { var bx = [opts[o][0], opts[o][1], lw, 7]; if (!hits(bx)) { lb = bx; break; } }
     if (spr) blit(base, spr, x - (spr.w >> 1), y - (spr.h >> 1));
     if (lb) { boxes.push(lb); ptext(base, p.name, lb[0] + 1, lb[1] + 1, p.cap ? C.gold : p.kind === "area" || p.kind === "hamlet" || p.kind === "village" ? C.ash : C.white); }
   });
@@ -571,7 +627,7 @@ function draw(now) {
   var gt = Math.floor(now / 350);
   for (var gi = 0; gi < glint.length; gi += 3) if (hash2(glint[gi + 1] + gt, glint[gi + 2]) > 0.6) px32[glint[gi]] = C.sky;
 
-  // dots: every quake today, brighter when recent; tiny ones fade first
+  // triangles: every quake today, colored and sized by magnitude; solid for the last 6 hours, hollow after that
   TAPS = []; var list = [];
   quakes.forEach(function (q) { if (q.time <= simNow) list.push(q); });
   list.sort(function (a, c) { return a.mag - c.mag; });
@@ -579,25 +635,22 @@ function draw(now) {
     var s3 = toScr(q.lat, q.lon); if (s3[0] < -40 || s3[0] > BW + 40 || s3[1] < -40 || s3[1] > BH + 40) return;
     var age = (simNow - q.time) / 1000, sx = Math.round(s3[0]), sy = Math.round(s3[1]);
     if (mode === "live" && age < 3600) {
-      drawRipples(sx, sy, q, age % 9, Math.max(1, Math.round(q.mag)), 0.45 + 0.55 * (1 - age / 3600), 5);
+      drawRipples(sx, sy, q, age % RIPPLE.liveEvery, Math.max(1, Math.round(q.mag)), 0.45 + 0.55 * (1 - age / 3600), RIPPLE.liveLife);
     } else if (mode === "replay") {
-      var ra = age / (24 * 3600 / REPLAY_S);
-      if (ra < 6) drawRipples(sx, sy, q, ra, Math.max(2, Math.round(q.mag * 1.3)), 1, 4.5);
+      var ra = age / (24 * 3600 / REPLAY_S), rr = Math.max(2, Math.round(q.mag * RIPPLE.replayRings));
+      if (ra < rr * RIPPLE.gap + RIPPLE.replayLife) drawRipples(sx, sy, q, ra, rr, 1, RIPPLE.replayLife);
     }
-    var sz = q.mag >= 6 ? 4 : q.mag >= 4.5 ? 3 : q.mag >= 2.5 ? 2 : 1;
-    var col = age < 3600 ? C[magColor(q.mag)] : age < 6 * 3600 ? (q.mag >= 4 ? C[magColor(q.mag)] : C.ash) : (q.mag >= 4.5 ? C.gold : C.grey);
-    if (age < 600 && Math.floor(now / 250) % 2) col = C.white;
-    for (var a = -1; a <= sz; a++) for (var c2 = -1; c2 <= sz; c2++) plot(sx - (sz >> 1) + a, sy - (sz >> 1) + c2, C.black);
-    for (var a2 = 0; a2 < sz; a2++) for (var c3 = 0; c3 < sz; c3++) plot(sx - (sz >> 1) + a2, sy - (sz >> 1) + c3, col);
+    var col = age < 600 && Math.floor(now / 250) % 2 ? "white" : magColor(q.mag);
+    tri(plotName, sx, sy, triSize(q.mag), col, age > 6 * 3600);
     TAPS.push([sx, sy, q.id]);
   });
 
   // fresh drops: the big splash
   splashes = splashes.filter(function (sp) {
-    var age = (now - sp.t0) / 1000; if (age > sp.rings * 0.5 + 7) return false;
+    var age = (now - sp.t0) / 1000; if (age > sp.rings * RIPPLE.gap + RIPPLE.splashLife) return false;
     var s4 = toScr(sp.q.lat, sp.q.lon);
     if (age < 0.4) { var r0 = Math.round(age * 10); for (var d = -r0; d <= r0; d++) { plot(s4[0] + d, s4[1], C.white); plot(s4[0], s4[1] + d, C.white); } }
-    drawRipples(Math.round(s4[0]), Math.round(s4[1]), sp.q, age, sp.rings, 1, 7);
+    drawRipples(Math.round(s4[0]), Math.round(s4[1]), sp.q, age, sp.rings, 1, RIPPLE.splashLife);
     return true;
   });
 
@@ -625,24 +678,39 @@ function text(s, x, y, col, align) {
   return w;
 }
 function frameBox(x, y, w, h) { b.fillStyle = NES.black; b.fillRect(x, y, w, h); b.fillStyle = NES.white; b.fillRect(x, y, w, 1); b.fillRect(x, y + h - 1, w, 1); b.fillRect(x, y, 1, h); b.fillRect(x + w - 1, y, 1, h); }
-var tickX = 0, tickText = "";
-function hud(now, simNow) {
-  var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : 3;
-  var n = 0, big = null; quakes.forEach(function (q) { if (q.time <= simNow && simNow - q.time < 24 * 3600e3) { n++; if (!big || q.mag > big.mag) big = q; } });
-  var l1 = mode === "replay" ? "REPLAY " + clockStr(simNow) : demo ? "DEMO POND" : "QUAKE POND", l2 = n + " TODAY";
-  var l3 = big ? "TOP M" + big.mag.toFixed(1) : "";
+/* The ticker: the newest quakes, with the red QUAKE POND header (count and biggest today) between every few.
+   It is rebuilt only when a loop finishes, so text never jumps mid-scroll. Tapping a quake in it flies there. */
+var TICK_N = 6, TICK_EVERY = 3, tick = { segs: [], w: 0, x: 0, empty: true };
+function buildTicker(simNow) {
+  var n = 0, big = null, recent = [];
+  quakes.forEach(function (q) { if (q.time <= simNow && simNow - q.time < 24 * 3600e3) { n++; recent.push(q); if (!big || q.mag > big.mag) big = q; } });
+  recent.sort(function (a, c) { return c.time - a.time; });
+  var head = (mode === "replay" ? "QUAKE POND REPLAY" : demo ? "DEMO POND" : "QUAKE POND") + "  " + n + " TODAY" + (big ? "  TOP M" + big.mag.toFixed(1) : "") + "  NEWEST";
+  var segs = [], x = 0;
   b.font = "8px 'Press Start 2P', monospace";
-  var w = Math.min(BW - 6, Math.max(b.measureText(l1).width, b.measureText(l2).width, b.measureText(l3).width) + 8);
-  frameBox(3, hy, w, l3 ? 33 : 23);
-  text(l1, 7, hy + 4, mode === "replay" ? NES.gold : demo ? NES.orange : NES.white);
-  text(l2, 7, hy + 14, NES.ice);
-  if (l3) text(l3, 7, hy + 24, NES[magColor(big.mag)]);
-
-  var q = latest, msg = q ? "LATEST  M" + q.mag.toFixed(1) + "  " + q.place.toUpperCase() + "  " + ago(q.time) + "     " : (live ? "WAITING FOR THE FIRST QUAKE     " : "LISTENING TO USGS...     ");
-  if (msg !== tickText) { tickText = msg; }
+  function add(s, col, id) { var w = b.measureText(s + "     ").width; segs.push({ x: x, w: w, s: s, col: col, id: id }); x += w; }
+  if (!recent.length) { add(head, NES.red); add(live ? "WAITING FOR THE FIRST QUAKE" : "LISTENING TO USGS...", NES.ice); }
+  recent.slice(0, TICK_N).forEach(function (q, i) {
+    if (i % TICK_EVERY === 0) add(head, NES.red);
+    add("M" + q.mag.toFixed(1) + "  " + q.place.toUpperCase() + "  " + ago(q.time), NES[magColor(q.mag)], q.id);
+  });
+  tick.segs = segs; tick.w = x; tick.empty = !recent.length;
+}
+function hud(now, simNow) {
+  if (mode === "replay") { // replay clock, only while replaying
+    var tb = document.getElementById("top").getBoundingClientRect(), hy = tb.left / SCALE < 90 ? Math.ceil(tb.bottom / SCALE) + 3 : 3;
+    var l1 = "REPLAY " + clockStr(simNow); b.font = "8px 'Press Start 2P', monospace";
+    frameBox(3, hy, b.measureText(l1).width + 8, 15); text(l1, 7, hy + 4, NES.gold);
+  }
+  if (!tick.w || (tick.empty && quakes.size)) { buildTicker(simNow); tick.x = 0; }
+  tick.x += 0.5; if (tick.x >= tick.w) { tick.x -= tick.w; buildTicker(simNow); }
   var ty = BH - 12; b.fillStyle = NES.black; b.fillRect(0, ty - 2, BW, 14); b.fillStyle = NES.white; b.fillRect(0, ty - 2, BW, 1);
-  var tw = b.measureText(tickText).width; tickX = (tickX + 0.5) % tw;
-  for (var x = -tickX; x < BW; x += tw) text(tickText, x, ty + 1, q ? NES[magColor(q.mag)] : NES.ice);
+  for (var x0 = -tick.x; x0 < BW; x0 += tick.w) tick.segs.forEach(function (s) { var sx = x0 + s.x; if (sx < BW && sx + s.w > 0) text(s.s, sx, ty + 1, s.col); });
+}
+function tickerHit(x) { // x in buffer pixels; returns the segment under it
+  if (!tick.w) return null; var pos = ((x + tick.x) % tick.w + tick.w) % tick.w;
+  for (var i = 0; i < tick.segs.length; i++) { var s = tick.segs[i]; if (pos >= s.x && pos < s.x + s.w) return s; }
+  return null;
 }
 function ago(t) { var s = Math.max(0, (Date.now() - t) / 1000); return s < 90 ? Math.round(s) + "S AGO" : s < 5400 ? Math.round(s / 60) + "M AGO" : Math.round(s / 3600) + "H AGO"; }
 function clockStr(t) { return new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(" ", ""); }
@@ -654,7 +722,7 @@ function select(id) {
   $("cMag").textContent = "M" + q.mag.toFixed(1); $("cMag").style.background = NES[magColor(q.mag)];
   $("cPlace").textContent = q.place.toUpperCase() + (q.type !== "earthquake" && q.type ? " (" + q.type.toUpperCase() + ")" : "");
   $("sWhen").textContent = ago(q.time) + " " + clockStr(q.time);
-  $("sDepth").textContent = Math.round(q.depth) + " KM / " + Math.round(q.depth * 0.621) + " MI";
+  $("sDepth").textContent = depthStr(q.depth);
   $("sFelt").textContent = q.tsunami ? "TSUNAMI FLAG" : q.felt ? q.felt + " PEOPLE" : "NO REPORTS";
   var dy = (q.lat - cfg.lat) * 69, dx = (q.lon - cfg.lon) * 69 * Math.cos(cfg.lat * DEG), d = Math.hypot(dx, dy);
   $("sDist").textContent = (d > 3000 ? "FAR AWAY" : Math.round(d).toLocaleString("en-US") + " MI");
@@ -687,7 +755,7 @@ function sync() {
   $("bMode").classList.toggle("on", mode === "replay");
   $("bSound").classList.toggle("on", sound);
 }
-$("bMode").addEventListener("click", function () { mode = mode === "live" ? "replay" : "live"; replay0 = performance.now(); sync(); });
+$("bMode").addEventListener("click", function () { mode = mode === "live" ? "replay" : "live"; replay0 = performance.now(); tick.w = 0; sync(); });
 $("bSound").addEventListener("click", function () {
   sound = !sound;
   if (sound && !audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { sound = false; } }
@@ -700,6 +768,46 @@ $("bWorld").addEventListener("click", function () { var us = $("bWorld").textCon
 $("bIn").addEventListener("click", function () { zoomBy(1.6); });
 $("bOut").addEventListener("click", function () { zoomBy(1 / 1.6); });
 $("cClose").addEventListener("click", deselect);
+
+/* KEY sheet: legend drawn with the same pixel triangles as the map, then the layer switches */
+function keyIcon(draw, w, h) {
+  var c = document.createElement("canvas"), k = c.getContext("2d"); c.width = w; c.height = h; c.style.width = w * 3 + "px"; c.style.height = h * 3 + "px";
+  draw(function (x, y, name) { k.fillStyle = NES[name]; k.fillRect(x, y, 1, 1); }); return c;
+}
+function keyRow(box, icon, label, color) {
+  var row = document.createElement("div"), ic = document.createElement("span"), t = document.createElement("span");
+  ic.className = "ic"; ic.appendChild(icon); t.textContent = label; if (color) t.style.color = color;
+  row.appendChild(ic); row.appendChild(t); box.appendChild(row);
+}
+function triIcon(m, hollow) { var h = triSize(m), hw = Math.round((h - 1) * 0.58); return keyIcon(function (pl) { tri(pl, hw + 1, 1 + ((h * 2 / 3) | 0), h, magColor(m), hollow); }, 2 * hw + 3, h + 2); }
+[[6, "M6 AND UP  STRONG"], [5, "M5 TO 6  MODERATE"], [4, "M4 TO 5  LIGHT"], [2.5, "M2.5 TO 4  MINOR"], [1, "UNDER M2.5  MICRO"]].forEach(function (r) {
+  keyRow($("keyMags"), triIcon(r[0]), r[1], NES[magColor(r[0])]);
+});
+keyRow($("keyMore"), triIcon(4.5), "SOLID  LAST 6 HOURS");
+keyRow($("keyMore"), triIcon(4.5, true), "HOLLOW  6 TO 24 HOURS");
+keyRow($("keyMore"), keyIcon(function (pl) {
+  [[3, 0], [3, 1], [2, 2], [1, 3], [0, 3]].forEach(function (p) { [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(function (s) { pl(4 + p[0] * s[0], 4 + p[1] * s[1], "ice"); pl(4 + p[1] * s[0], 4 + p[0] * s[1], "ice"); }); });
+  pl(4, 4, "gold");
+}, 9, 9), "RINGS  SHAKING IN THE LAST HOUR. BLINKING  LAST 10 MINUTES");
+keyRow($("keyMore"), keyIcon(function (pl) { pl(2, 0, "pink"); pl(2, 4, "pink"); pl(0, 2, "pink"); pl(4, 2, "pink"); }, 5, 5), "PINK CROSS  YOU");
+var LAYER_NAMES = { labels: "PLACE NAMES", borders: "BORDERS", roads: "ROADS", towns: "TOWN ICONS" };
+function drawLayers() {
+  var box = $("layerList"); box.innerHTML = "";
+  Object.keys(LAYER_NAMES).forEach(function (k) {
+    var bt = document.createElement("button"), s = document.createElement("span"), e = document.createElement("em");
+    s.textContent = LAYER_NAMES[k]; e.textContent = layers[k] ? "ON" : "OFF"; bt.classList.toggle("on", layers[k]);
+    bt.setAttribute("aria-pressed", layers[k] ? "true" : "false");
+    bt.appendChild(s); bt.appendChild(e);
+    bt.addEventListener("click", function () {
+      layers[k] = !layers[k]; try { localStorage.setItem("quakepond.layers", JSON.stringify(layers)); } catch (err) {}
+      bump(); drawLayers();
+    });
+    box.appendChild(bt);
+  });
+}
+function openKey() { drawLayers(); $("keySheet").hidden = false; }
+$("bKey").addEventListener("click", openKey);
+$("bKeyClose").addEventListener("click", function () { $("keySheet").hidden = true; });
 $("cDrop").addEventListener("click", function () { var q = sel && quakes.get(sel); if (q) { splash(q, false); blip(q.mag); } });
 function zoomBy(f, ax, ay) {
   var z0 = view.z, z1 = clamp(view.z * f, Math.min(BW / 360, BH / 170) * 0.9, ZMAX); if (z1 === z0) return;
@@ -725,7 +833,10 @@ cv.addEventListener("pointermove", function (e) {
 });
 function endPtr(e) {
   if (!ptrs[e.pointerId]) return; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length) return;
-  if (moved < 6) {
+  if (moved < 6 && e.clientY / SCALE >= BH - 14) { // tap on the ticker
+    var hit = tickerHit(e.clientX / SCALE), tq = hit && hit.id && quakes.get(hit.id);
+    if (tq) { flyTo(tq); select(tq.id); splash(tq, false); } else if (hit) openList();
+  } else if (moved < 6) {
     var x = e.clientX / SCALE, y = e.clientY / SCALE, best = null, bd = 9;
     TAPS.forEach(function (t) { var d = Math.hypot(t[0] - x, t[1] - y); if (d < bd) { bd = d; best = t[2]; } });
     if (best) { select(best); var q = quakes.get(best); if (q) splash(q, false); } else deselect();
@@ -735,7 +846,7 @@ function endPtr(e) {
 cv.addEventListener("pointerup", endPtr); cv.addEventListener("pointercancel", endPtr);
 cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = performance.now(); zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX / SCALE, e.clientY / SCALE); }, { passive: false });
 addEventListener("keydown", function (e) {
-  if (e.key === "Escape") { deselect(); $("listSheet").hidden = true; } if (e.key === "l") openList(); if (e.key === "r") $("bMode").click(); if (e.key === "s") $("bSound").click();
+  if (e.key === "Escape") { deselect(); $("listSheet").hidden = true; $("keySheet").hidden = true; } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "r") $("bMode").click(); if (e.key === "s") $("bSound").click();
   if (e.key === "+" || e.key === "=") zoomBy(1.5); if (e.key === "-") zoomBy(1 / 1.5);
 });
 

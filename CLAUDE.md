@@ -15,11 +15,16 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - USGS polling: `all_day` every 5 minutes, `all_hour` every 60 seconds. USGS does not update faster.
 - Demo quakes only when USGS fails, always labeled DEMO.
 - Default home spot is Hurricane, UT.
+- Units are miles and feet only, never km. `toMiles()` rewrites USGS place strings.
+- Quakes are triangles colored by magnitude (`magColor`, `triSize`); solid under 6 hours old, hollow after. The KEY sheet draws its legend with the same `tri()` function so they always match.
+- No HUD box. QUAKE POND, the count and top quake live in the ticker in red, between the newest quakes. Ticker rebuilds only when a loop ends so it never jumps.
+- Layer switches (labels, borders, roads, town icons) are saved in localStorage `quakepond.layers`.
+- Ripple timing knobs are all in `RIPPLE`.
 - Attribution line (USGS, Natural Earth, OpenStreetMap) must stay visible.
 
 ## Current step
 
-First version in the repo. Next: connect the repo to Cloudflare Pages so `main` deploys to `8bitquake.pages.dev`.
+Live at `8bitquake.pages.dev` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
 
 ## Commands
 
