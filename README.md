@@ -38,7 +38,7 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 
 Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
 
-Roads and towns from OpenStreetMap appear once you zoom in to about 150 miles across (four taps of + from the USA view). Each grid cell is asked of the Overpass servers one at a time with a 20 second limit; if one server fails, the next is tried, and a busy message shows in the top left.
+Roads and towns from OpenStreetMap appear once you zoom in to about 150 miles across (four taps of + from the USA view). Each grid cell is asked of the Overpass servers one at a time with a 45 second limit (Overpass may queue a request, then allows itself 25 seconds); if one server fails, the next is tried, and a busy message shows in the top left.
 
 All distances and depths are in miles and feet. USGS place names like "283 km E of Levuka" are converted to miles.
 

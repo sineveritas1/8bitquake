@@ -343,7 +343,7 @@ var TIERS = [
 var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
 var HW = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", unclassified: "minor", residential: "minor" };
 var PLACE_POP = { city: 2e5, town: 2e4, village: 1500, hamlet: 150, suburb: 400, neighbourhood: 300 };
-var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0, osmFailAt = -1e9, OSM_TIMEOUT = 20000;
+var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0, osmFailAt = -1e9, OSM_TIMEOUT = 45000; // Overpass may queue us, then runs up to its own 25 second limit
 function visCells(ti) {
   var T = TIERS[ti], c = T.cell, out = [];
   var j0 = Math.floor(Math.max(P.b, -84) / c), j1 = Math.floor(Math.min(P.t, 84) / c), i0 = Math.floor(P.l / c), i1 = Math.floor(P.r / c);
@@ -618,7 +618,7 @@ function bake(now) {
       var wx = x + ox;
       if (mask[k]) {
         var coast = (x > 0 && !mask[k - 1]) || (x < BW - 1 && !mask[k + 1]) || (y > 0 && !mask[k - BW]) || (y < BH - 1 && !mask[k + BW]);
-        base[k] = coast ? C.lime : (((wx + wy) & 1) && hash2(wx, wy) > 0.55 ? C.green : C.forest);
+        base[k] = coast ? C.lime : C.forest; // solid dark green land, bright coastline
       } else {
         var h = hash2(wx, wy);
         base[k] = ((wx + wy) & 1) && h > 0.8 ? C.deep : C.navy;
