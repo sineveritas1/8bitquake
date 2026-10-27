@@ -20,6 +20,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - No HUD box. 8-BIT QUAKE, the count and top quake live in the ticker in red, between the newest quakes. Ticker rebuilds only when a loop ends so it never jumps.
 - Switches (labels, borders, roads, town icons) are saved in localStorage `quakepond.layers`.
 - Ripple timing knobs are all in `RIPPLE`.
+- Water does not sparkle and the map shows no loading or server status text; both were removed on purpose.
 - No audio and no vibration; both were tried and removed on purpose. A selected quake repeats its ripple (`RIPPLE.selectedEvery`).
 - Card has a "feels like" line (`feelFor`): USGS MMI wording when `mmi >= 2` or `cdi` from 3+ reports, else a magnitude guide. Remote ocean quakes report near-zero intensity, so low values are ignored.
 - Controls: LIST, USA/WORLD and a gear top right; replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.

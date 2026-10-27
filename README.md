@@ -28,7 +28,7 @@ If USGS does not answer twice in a row, it shows clearly labeled demo quakes alo
 - Each quake is a triangle. Color and size show magnitude; solid means the last 6 hours, hollow means 6 to 24 hours. Rings mean it shook in the last hour.
 - Opens on a title screen that says what this is and where the data comes from. PRESS START to play.
 - Tap a triangle to select it. Its card shows magnitude, place, depth, miles from you (great-circle distance from the home spot, Hurricane UT by default), and a plain-words line on what it feels like (official USGS intensity wording when USGS has a real reading, otherwise a rough guide from magnitude). While selected it ripples every few seconds. There is no sound or vibration.
-- The ticker at the bottom scrolls the 6 newest quakes, with the red 8-BIT QUAKE header (count and biggest today) between them. Tap a quake in it to fly there; tap the header to open the list.
+- The ticker at the bottom scrolls the 6 newest quakes, with the red 8-BIT QUAKE header (count and biggest today) between them. Tap a quake in it to zoom there; tap the header to open the list.
 - **Clock (bottom left):** a 72 second replay of the last 24 hours. Tap again for live.
 - **LIST:** biggest 40 quakes in the last 24 hours.
 - **USA / WORLD:** jump between views.
@@ -41,7 +41,7 @@ Counts are a rolling 24 hours (the USGS `all_day` feed), not since midnight.
 
 Big roads come from our own files in `data/roads/`: Natural Earth's 1:10m world roads (public domain), cut into 10 degree tiles that load only when the view needs them (1.7 MB for the whole world; a tile is a few KB to 80 KB). Major highways show from about one zoom step past the USA view, secondary highways and main roads a little closer. To rebuild them from a new Natural Earth release, see the comment at the top of `tools/build-roads.js`.
 
-Extra detail comes from OpenStreetMap through the public Overpass servers: town names once you zoom in to about 150 miles across, then all main roads, rivers and villages, then streets. Each grid cell is asked one at a time with a 45 second limit; if one server fails, the next is tried, and a status message shows in the top left. If Overpass is down, the big roads still show.
+Extra detail comes from OpenStreetMap through the public Overpass servers: town names once you zoom in to about 150 miles across, then all main roads, rivers and villages, then streets. Each grid cell is asked one at a time with a 45 second limit; if one server fails, the next is tried. The map shows no status messages; it just fills in when the data arrives. If Overpass is down, the big roads still show.
 
 All distances and depths are in miles and feet. USGS place names like "283 km E of Levuka" are converted to miles.
 

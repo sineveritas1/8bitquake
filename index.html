@@ -368,7 +368,7 @@ var TIERS = [
 var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
 var HW = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", unclassified: "minor", residential: "minor" };
 var PLACE_POP = { city: 2e5, town: 2e4, village: 1500, hamlet: 150, suburb: 400, neighbourhood: 300 };
-var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0, osmFailAt = -1e9, OSM_TIMEOUT = 45000; // Overpass may queue us, then runs up to its own 25 second limit
+var osmCells = new Map(), osmBusy = false, osmCool = 0, ovp = 0, viewMovedAt = 0, OSM_TIMEOUT = 45000; // Overpass may queue us, then runs up to its own 25 second limit
 function visCells(ti) {
   var T = TIERS[ti], c = T.cell, out = [];
   var j0 = Math.floor(Math.max(P.b, -84) / c), j1 = Math.floor(Math.min(P.t, 84) / c), i0 = Math.floor(P.l / c), i1 = Math.floor(P.r / c);
@@ -422,7 +422,7 @@ async function osmTick(now) {
     bump();
   } catch (err) {
     // try the same cell on the next server; only after every server has failed, wait a minute before asking again
-    tries++; ovp = (ovp + 1) % OVERPASS.length; osmCool = performance.now() + 1500; osmFailAt = performance.now();
+    tries++; ovp = (ovp + 1) % OVERPASS.length; osmCool = performance.now() + 1500;
     osmCells.set(next.key, tries < OVERPASS.length ? { state: "retry", tries: tries } : { state: "err", retry: performance.now() + 60000 });
   }
   clearTimeout(timer);
@@ -563,7 +563,7 @@ function drawRipples(cx, cy, q, age, rings, strength, life) {
 
 /* ================= the static map, baked into a pixel layer whenever the view or the data changes ================= */
 var rc = document.createElement("canvas"), rx = rc.getContext("2d", { willReadFrequently: true });
-var base = null, mask = null, glint = [], bakeKey = "", bakeVer = -1;
+var base = null, mask = null, bakeKey = "", bakeVer = -1;
 function shiftsFor(bb) { var out = []; for (var s = -360; s <= 360; s += 360) if (bb[0] + s <= P.r && bb[2] + s >= P.l && bb[1] <= P.t && bb[3] >= P.b) out.push(s); return out; }
 function fillPolys(list, color) {
   rx.fillStyle = color;
@@ -635,7 +635,7 @@ function bake(now) {
   fillPolys(land, "#fff"); if (MAP.lakes) fillPolys(MAP.lakes, "#000");
   var d = rx.getImageData(0, 0, BW, BH).data, x, y, k;
   for (k = 0; k < mask.length; k++) mask[k] = d[k * 4] > 127 ? 1 : 0;
-  var ox = Math.floor(P.l * P.zx), oy = Math.floor(P.t * P.zy); glint = [];
+  var ox = Math.floor(P.l * P.zx), oy = Math.floor(P.t * P.zy);
   for (y = 0, k = 0; y < BH; y++) {
     var la = P.t - (y + 0.5) / P.zy, off = la > 90 || la < -90, wy = oy - y;
     for (x = 0; x < BW; x++, k++) {
@@ -647,7 +647,6 @@ function bake(now) {
       } else {
         var h = hash2(wx, wy);
         base[k] = ((wx + wy) & 1) && h > 0.8 ? C.deep : C.navy;
-        if (h > 0.997) glint.push(k, wx, wy);
       }
     }
   }
@@ -724,8 +723,6 @@ function draw(now) {
   var busy = interacting(now), key = [view.lon.toFixed(6), view.lat.toFixed(6), view.z.toFixed(5), BW, BH].join(",");
   if (key !== bakeKey || MAP.ver !== bakeVer || busy !== bake.busy) { if (key !== bakeKey) viewMovedAt = now; bakeKey = key; bakeVer = MAP.ver; bake.busy = busy; bake(now); }
   px32.set(base);
-  var gt = Math.floor(now / 350);
-  for (var gi = 0; gi < glint.length; gi += 3) if (hash2(glint[gi + 1] + gt, glint[gi + 2]) > 0.6) px32[glint[gi]] = C.sky;
 
   // triangles: every quake today, colored and sized by magnitude; solid for the last 6 hours, hollow after that
   TAPS = []; var list = [];
@@ -767,8 +764,6 @@ function draw(now) {
     var s5 = toScr(q0.lat, q0.lon), on = Math.floor(now / 300) % 2 ? C.white : C.gold, r = 5, cx = Math.round(s5[0]), cy = Math.round(s5[1]);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (cc) { for (var t = 0; t < 3; t++) { plot(cx + cc[0] * r - cc[0] * t, cy + cc[1] * r, on); plot(cx + cc[0] * r, cy + cc[1] * r - cc[1] * t, on); } });
   }
-  var roadMsg = now - osmFailAt < 8000 ? "MAP SERVER BUSY. RETRYING" : osmBusy ? "LOADING DETAIL" : "";
-  if (roadMsg && (roadMsg[0] === "M" || Math.floor(now / 400) % 2)) ptext(px32, roadMsg, 3, SAFE_T + 3, roadMsg[0] === "M" ? C.orange : C.ice);
   b.putImageData(img, 0, 0);
   hud(now, simNow);
 }
@@ -877,7 +872,7 @@ function fitSides() {
 function openList() {
   var arr = []; quakes.forEach(function (q) { arr.push(q); });
   arr.sort(function (a, c) { return c.mag - a.mag; });
-  $("listNote").textContent = demo ? "USGS IS NOT ANSWERING, SO THESE ARE DEMO QUAKES." : arr.length + " QUAKES IN THE LAST 24 HOURS, BIGGEST FIRST. TAP ONE TO FLY THERE.";
+  $("listNote").textContent = demo ? "USGS IS NOT ANSWERING, SO THESE ARE DEMO QUAKES." : arr.length + " QUAKES IN THE LAST 24 HOURS, BIGGEST FIRST. TAP ONE TO ZOOM THERE.";
   var box = $("quakes"); box.innerHTML = "";
   arr.slice(0, 40).forEach(function (q) {
     var bt = document.createElement("button"), m = document.createElement("b"), p = document.createElement("span"), t = document.createElement("em");
