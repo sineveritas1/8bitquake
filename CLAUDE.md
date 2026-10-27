@@ -4,7 +4,7 @@ Follow the global `~/.claude/CLAUDE.md`. This file adds what is specific here.
 
 ## What this is
 
-A single-file static site (`index.html`) that shows live USGS earthquakes as ripples on an 8-bit world map. Personal project, Cloudflare Pages project `8bitquake`, served at `8bitquake.pages.dev`.
+A single-file static site (`index.html`) that shows live USGS earthquakes as ripples on an 8-bit world map. Personal project, Cloudflare Pages project `8bitquake`, served at `8bitquake.com` (custom domain; `8bitquake.pages.dev` and `www.8bitquake.com` also serve it).
 
 ## Decided
 
@@ -24,11 +24,18 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 - No audio and no vibration; both were tried and removed on purpose. A selected quake repeats its ripple (`RIPPLE.selectedEvery`).
 - Card has a "feels like" line (`feelFor`): USGS MMI wording when `mmi >= 2` or `cdi` from 3+ reports, else a magnitude guide. Remote ocean quakes report near-zero intensity, so low values are ignored.
 - Controls: LIST, USA/WORLD and a gear top right; replay clock bottom left; zoom bottom right. Icons are pixel art in `ICONS`, rendered by `pixSvg()`.
-- Credits live in the gear menu and the title screen. A small "© OPENSTREETMAP" stays on the map whenever OSM data can be on screen, because OSM requires visible attribution.
+- Credits live in the ? About sheet and the title screen. A small "© OPENSTREETMAP" stays on the map whenever OSM data can be on screen, because OSM requires visible attribution.
 - Name is "8-BIT Quake", written 8-BIT QUAKE on screen. Never "Quake Pond" (old name). The localStorage key `quakepond.layers` keeps the old name on purpose so saved settings survive.
 - Title screen shows on every visit. Not an earthquake warning; the safety lines are white text under a centered red caution triangle (`ICONS.warn`).
 - Count wording is "IN 24H", never "today": the feed is a rolling 24 hours.
 - Attribution line (USGS, Natural Earth, OpenStreetMap) must stay visible.
+
+## Search and sharing
+
+- Title is "8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art". Canonical, Open Graph, Twitter and JSON-LD live in the `<head>`. Canonical domain is `https://8bitquake.com/` (in the `<head>`, `robots.txt` and `sitemap.xml`); keep all three in step.
+- All icons, the link preview and the About badge come from `tools/build-icons.js`. Do not hand-edit those PNGs; change the script and rerun it.
+- The ? button opens About (content, FAQ, credits, contact hello@neondeadhead.com, the pixel Neon Dead Head badge). Credits live there, not in the gear menu. The badge is a pixelated Grateful Dead "Steal Your Face", used as a fan homage at Zack's request.
+- Keep the page's visible FAQ in step with the FAQPage JSON-LD.
 
 ## Devices
 
@@ -47,7 +54,7 @@ A single-file static site (`index.html`) that shows live USGS earthquakes as rip
 
 ## Current step
 
-Live at `8bitquake.pages.dev` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
+Live at `8bitquake.com` from `main`. Bigger changes go to a branch first for a Pages preview, and merge after Zack checks it.
 
 ## Commands
 

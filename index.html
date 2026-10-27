@@ -6,8 +6,49 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#000000" />
-<title>8-BIT Quake</title>
-<meta name="description" content="Every earthquake on Earth, live from USGS, dropped like stones in an 8-bit pond, on a pixel map of nations, states, rivers, roads and towns." />
+<title>8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art</title>
+<meta name="description" content="8-BIT Quake is a free live earthquake map. Every earthquake on Earth from the last 24 hours, straight from the USGS, ripples across a retro 8-bit pixel world map with roads, towns and borders." />
+<meta name="keywords" content="earthquake map, live earthquakes, USGS earthquakes today, earthquake tracker, 8-bit map, pixel art map, retro earthquake map" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<link rel="canonical" href="https://8bitquake.com/" />
+<!-- icons: Google uses the .ico or a 48px multiple; phones use the touch icon and the manifest -->
+<link rel="icon" href="/favicon.ico" sizes="48x48" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-title" content="8-BIT Quake" />
+<meta name="application-name" content="8-BIT Quake" />
+<!-- link previews in texts, chats and social posts -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="8-BIT Quake" />
+<meta property="og:title" content="8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art" />
+<meta property="og:description" content="8-BIT Quake is a free live earthquake map. Every earthquake on Earth from the last 24 hours, straight from the USGS, ripples across a retro 8-bit pixel world map with roads, towns and borders." />
+<meta property="og:url" content="https://8bitquake.com/" />
+<meta property="og:image" content="https://8bitquake.com/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="8-BIT Quake: a pixel quake ripple and the words every earthquake on Earth, live from USGS, on a pixel map." />
+<meta property="og:locale" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="8-BIT Quake: Live Earthquake Map in 8-Bit Pixel Art" />
+<meta name="twitter:description" content="8-BIT Quake is a free live earthquake map. Every earthquake on Earth from the last 24 hours, straight from the USGS, ripples across a retro 8-bit pixel world map with roads, towns and borders." />
+<meta name="twitter:image" content="https://8bitquake.com/og-image.png" />
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@graph": [
+  {"@type": "WebSite", "name": "8-BIT Quake", "url": "https://8bitquake.com/"},
+  {"@type": "WebApplication", "name": "8-BIT Quake", "url": "https://8bitquake.com/", "image": "https://8bitquake.com/og-image.png",
+   "description": "8-BIT Quake is a free live earthquake map. Every earthquake on Earth from the last 24 hours, straight from the USGS, ripples across a retro 8-bit pixel world map with roads, towns and borders.", "applicationCategory": "ReferenceApplication", "operatingSystem": "Any", "browserRequirements": "Requires JavaScript",
+   "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+   "creator": {"@type": "Organization", "name": "Neon Dead Head", "email": "hello@neondeadhead.com"}},
+  {"@type": "FAQPage", "mainEntity": [
+   {"@type": "Question", "name": "Where does 8-BIT Quake get its earthquakes?", "acceptedAnswer": {"@type": "Answer", "text": "From the U.S. Geological Survey (USGS) live earthquake feeds, checked every minute. It shows every quake USGS lists for the last 24 hours, worldwide."}},
+   {"@type": "Question", "name": "Is 8-BIT Quake an earthquake warning system?", "acceptedAnswer": {"@type": "Answer", "text": "No. It is a hobby map for curiosity. For warnings and safety information, follow your local officials and official alert services."}},
+   {"@type": "Question", "name": "What do the colors mean?", "acceptedAnswer": {"@type": "Answer", "text": "Each triangle is a quake, colored and sized by magnitude: light blue under 2.5, white 2.5 to 4, gold 4 to 5, salmon 5 to 6 and red 6 and up. Rings mean it happened in the last hour."}},
+   {"@type": "Question", "name": "How far away was a quake from me?", "acceptedAnswer": {"@type": "Answer", "text": "Tap a quake, then tap TAP TO SET in the FROM YOU box. Use your phone location or type a city or ZIP code, and 8-BIT Quake shows the straight-line distance in miles. Your location stays on your device."}}
+  ]}
+]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
@@ -88,6 +129,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: -16px; background: var(--black); margin: -16px -16px 6px; padding: 16px 16px 0; }
 .phead h2 { padding-top: 14px; }
 .phead button { box-shadow: none; flex: none; }
+.madeby { display: flex; gap: 16px; align-items: center; }
+.madeby img { width: 96px; height: 96px; image-rendering: pixelated; image-rendering: crisp-edges; flex: none; }
+.madeby p { margin: 0; }
+.panel p b { color: var(--white); font-weight: 400; }
 .panel ul { margin: 0 0 14px; padding-left: 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
 .panel p { margin: 0 0 14px; color: var(--ice); font-size: 10px; line-height: 1.8; }
 .list { display: grid; gap: 6px; margin-bottom: 12px; }
@@ -122,21 +167,23 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 </style>
 </head>
 <body>
-<canvas id="cv"></canvas>
+<canvas id="cv" role="img" aria-label="Live 8-bit map of earthquakes from the last 24 hours"></canvas>
+<noscript><div style="padding:24px;color:#fcfcfc;font:14px/1.8 monospace;max-width:640px"><h1>8-BIT Quake: live earthquake map</h1><p>Every earthquake on Earth from the last 24 hours, live from the USGS, drawn on a retro 8-bit pixel map. Turn on JavaScript to see the map.</p><p>Contact: <a style="color:#3cbcfc" href="mailto:hello@neondeadhead.com">hello@neondeadhead.com</a></p></div></noscript>
 <div id="safe" aria-hidden="true" style="position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);"></div>
 <div id="splash" role="dialog" aria-labelledby="splashTitle">
   <div class="panel">
     <h1 id="splashTitle">8-BIT QUAKE</h1>
     <p>EVERY EARTHQUAKE ON EARTH FROM THE LAST 24 HOURS, LIVE FROM THE U.S. GEOLOGICAL SURVEY (USGS), CHECKED EVERY MINUTE.</p>
-    <p>TAP A TRIANGLE FOR DETAILS. THE GEAR HAS THE KEY, MAP LAYERS AND CREDITS.</p>
+    <p>TAP A TRIANGLE FOR DETAILS. THE GEAR HAS THE KEY AND MAP LAYERS. THE ? HAS ABOUT AND CONTACT.</p>
     <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING. FOR ALERTS, FOLLOW YOUR LOCAL OFFICIALS.</span></p>
     <button id="bStart" disabled>LOADING MAP...</button>
   </div>
 </div>
 <div id="top">
-  <button id="bList" aria-label="Biggest quakes in the last 24 hours">LIST</button>
-  <button id="bWorld" aria-label="Switch between the whole world and the US">USA</button>
-  <button id="bKey" class="icon" aria-label="Settings, key and credits"></button>
+  <button id="bList" title="Biggest quakes in the last 24 hours">LIST</button>
+  <button id="bWorld" title="Switch between the whole world and the US">USA</button>
+  <button id="bAbout" class="icon" aria-label="About 8-BIT Quake and contact"></button>
+  <button id="bKey" class="icon" aria-label="Settings and map key"></button>
 </div>
 <div id="osm" hidden>&copy; OPENSTREETMAP</div>
 <div id="dock">
@@ -179,6 +226,33 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="list"><button id="bLocClear" hidden>CLEAR MY LOCATION</button></div>
   </div>
 </div>
+<div id="aboutSheet" class="sheet" hidden>
+  <article class="panel" role="dialog" aria-labelledby="aboutTitle">
+    <div class="phead"><h2 id="aboutTitle">ABOUT 8-BIT QUAKE</h2><button class="x icon" aria-label="Close"></button></div>
+    <p>8-BIT QUAKE IS A FREE, LIVE EARTHQUAKE MAP. EVERY EARTHQUAKE ON EARTH FROM THE LAST 24 HOURS, STRAIGHT FROM THE U.S. GEOLOGICAL SURVEY (USGS), RIPPLES ACROSS A RETRO 8-BIT PIXEL MAP OF THE WORLD WITH ROADS, TOWNS, RIVERS AND BORDERS.</p>
+    <h3>HOW IT WORKS</h3>
+    <ul>
+      <li>EVERY MINUTE IT ASKS USGS FOR NEW QUAKES. NEW ONES DROP IN WITH A SPLASH.</li>
+      <li>EACH TRIANGLE IS A QUAKE. BIGGER AND REDDER MEANS STRONGER. RINGS MEAN IT SHOOK IN THE LAST HOUR.</li>
+      <li>TAP A QUAKE FOR WHEN, HOW DEEP, HOW FAR FROM YOU AND WHAT IT FEELS LIKE.</li>
+      <li>THE CLOCK REPLAYS THE LAST 24 HOURS IN ABOUT A MINUTE.</li>
+    </ul>
+    <h3>QUESTIONS</h3>
+    <p><b>IS THIS A WARNING SYSTEM?</b> NO. IT IS A HOBBY MAP FOR CURIOSITY. FOR ALERTS AND SAFETY, FOLLOW YOUR LOCAL OFFICIALS.</p>
+    <p><b>WHAT IS MAGNITUDE?</b> HOW MUCH ENERGY A QUAKE RELEASED. EACH STEP UP IS ABOUT 32 TIMES MORE ENERGY. MOST QUAKES UNDER 2.5 ARE NEVER FELT.</p>
+    <p><b>WHY ARE THERE SO MANY IN CALIFORNIA AND ALASKA?</b> USGS HAS DENSE SENSORS THERE, SO IT CATCHES TINY QUAKES. ELSEWHERE IT MOSTLY LISTS QUAKES OF 4.5 AND UP.</p>
+    <p><b>DOES IT TRACK ME?</b> NO ACCOUNTS, NO ADS, NO TRACKING. A LOCATION YOU SET STAYS ON YOUR DEVICE.</p>
+    <h3>CREDITS</h3>
+    <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
+    <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS. TYPED PLACES ARE LOOKED UP WITH <a href="https://nominatim.org/" target="_blank" rel="noopener">NOMINATIM</a>.</p>
+    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</span></p>
+    <h3>MADE BY</h3>
+    <div class="madeby">
+      <img src="/img/made-by-8bit.png" width="48" height="48" alt="Neon Dead Head badge in 8-bit pixels" loading="lazy" />
+      <p>MADE FOR FUN BY NEON DEAD HEAD. IDEAS, BUGS OR JUST HELLO:<br /><a href="mailto:hello@neondeadhead.com?subject=8-BIT%20Quake">HELLO@NEONDEADHEAD.COM</a></p>
+    </div>
+  </article>
+</div>
 <div id="keySheet" class="sheet" hidden>
   <div class="panel" role="dialog" aria-labelledby="keyTitle">
     <div class="phead"><h2 id="keyTitle">SETTINGS</h2><button class="x icon" aria-label="Close"></button></div>
@@ -193,11 +267,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="key" id="keyMore"></div>
     <h3>SELECTED QUAKE</h3>
     <p>TAP A QUAKE TO SELECT IT. WHILE SELECTED IT RIPPLES EVERY FEW SECONDS. THERE IS NO SOUND OR VIBRATION.</p>
-    <h3>ABOUT AND CREDITS</h3>
-    <p>QUAKES: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS EARTHQUAKE HAZARDS PROGRAM</a>, A ROLLING 24 HOUR FEED. COUNTS ARE THE LAST 24 HOURS, NOT SINCE MIDNIGHT.</p>
-    <p>MAP: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">NATURAL EARTH</a>. ROADS AND TOWNS &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OPENSTREETMAP CONTRIBUTORS</a>, VIA THE PUBLIC OVERPASS SERVERS. TYPED PLACES ARE LOOKED UP WITH <a href="https://nominatim.org/" target="_blank" rel="noopener">NOMINATIM</a>.</p>
-    <p class="warn"><span class="wicon"></span><span>FOR CURIOSITY, NOT SAFETY. THIS IS NOT AN EARTHQUAKE WARNING.</span></p>
-    <p class="deskonly">KEYS: L LIST, K SETTINGS, R REPLAY, + AND - ZOOM, ARROWS OR DRAG TO MOVE, ESC CLOSE.</p>
+    <p class="deskonly">KEYS: L LIST, K SETTINGS, ? ABOUT, R REPLAY, + AND - ZOOM, ARROWS OR DRAG TO MOVE, ESC CLOSE.</p>
     <div class="list"><button id="bIntro">SHOW THE INTRO AGAIN</button></div>
   </div>
 </div>
@@ -923,6 +993,7 @@ var ICONS = {
   replay: ["....#####...", "..##.....#..", "###.......#.", "##...#.....#", "#.#..#.....#", ".....#.....#", ".....###...#", "...........#", ".#........#.", "..#......#..", "...######..."],
   cog: [".....##.....", "..#..##..#..", ".###.##.###.", "..########..", "...##..##...", "####....####", "####....####", "...##..##...", "..########..", ".###.##.###.", "..#..##..#..", ".....##....."],
   warn: [".....#.....", "....###....", "....###....", "...##.##...", "...##.##...", "..###.###..", "..###.###..", ".#########.", ".####.####.", "###########"],
+  about: ["..####..", ".##..##.", ".##..##.", ".....##.", "....##..", "...##...", "...##...", "........", "...##...", "...##..."],
   x: ["##....##", "###..###", ".######.", "..####..", "..####..", ".######.", "###..###", "##....##"]
 };
 function pixSvg(rows) {
@@ -930,14 +1001,16 @@ function pixSvg(rows) {
   return '<svg viewBox="0 0 ' + rows[0].length + " " + rows.length + '" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
 }
 document.querySelectorAll(".wicon").forEach(function (el) { el.innerHTML = pixSvg(ICONS.warn); });
-$("bKey").innerHTML = pixSvg(ICONS.cog); $("bMode").innerHTML = pixSvg(ICONS.replay);
+$("bKey").innerHTML = pixSvg(ICONS.cog); $("bAbout").innerHTML = pixSvg(ICONS.about); $("bMode").innerHTML = pixSvg(ICONS.replay);
 document.querySelectorAll(".x").forEach(function (bt) { bt.innerHTML = pixSvg(ICONS.x); bt.addEventListener("click", closeSheets); });
 function sync() {
   $("bMode").classList.toggle("on", mode === "replay"); $("bMode").setAttribute("aria-pressed", mode === "replay" ? "true" : "false");
   $("bMode").setAttribute("aria-label", mode === "replay" ? "Replaying the last 24 hours. Back to live" : "Replay the last 24 hours");
 }
 // sheets close with their X, with Escape, or with a tap anywhere outside the panel
-function closeSheets() { $("listSheet").hidden = true; $("keySheet").hidden = true; $("locSheet").hidden = true; }
+function closeSheets() { $("listSheet").hidden = true; $("keySheet").hidden = true; $("locSheet").hidden = true; $("aboutSheet").hidden = true; }
+function openAbout() { closeSheets(); $("aboutSheet").hidden = false; }
+$("bAbout").addEventListener("click", openAbout);
 
 /* your location: the phone's GPS (asked once by the browser) or a typed city, state or ZIP looked up with Nominatim */
 function saveHome(lat, lon, label) {
@@ -1073,7 +1146,7 @@ cv.addEventListener("wheel", function (e) { e.preventDefault(); lastWheel = perf
 addEventListener("keydown", function (e) {
   if (!$("splash").hidden) { if (e.key === "Enter" || e.key === " ") $("bStart").click(); return; }
   if (document.activeElement && document.activeElement.tagName === "INPUT") { if (e.key === "Escape") closeSheets(); return; }
-  if (e.key === "Escape") { deselect(); closeSheets(); } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "r") $("bMode").click();
+  if (e.key === "Escape") { deselect(); closeSheets(); } if (e.key === "l") openList(); if (e.key === "k") openKey(); if (e.key === "?") openAbout(); if (e.key === "r") $("bMode").click();
   if (e.key === "+" || e.key === "=") zoomBy(1.5); if (e.key === "-") zoomBy(1 / 1.5);
   var step = 20 / view.z, arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; // 20 map pixels per press
   if (arrows) { e.preventDefault(); view.lon += arrows[0] * step / kxFor(view.z, view.lat); view.lat = clamp(view.lat + arrows[1] * step, -82, 82); normLon(); }
